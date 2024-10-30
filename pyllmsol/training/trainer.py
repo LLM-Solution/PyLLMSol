@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:33:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-29 16:58:35
+# @Last modified time: 2024-10-30 15:13:35
 
 """ Trainer objects. """
 
@@ -16,8 +16,8 @@ from tqdm import tqdm
 from transformers import AutoModelForCausalLM, PreTrainedTokenizerBase
 
 # Local packages
-from .checkpoint import Checkpoint
-from .utils import set_mask
+from pyllmsol.training.checkpoint import Checkpoint
+from pyllmsol.training.utils import set_mask
 
 __all__ = []
 

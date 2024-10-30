@@ -1,0 +1,9 @@
+# Ignore folders
+/logs/
+/pyllmsol.egg-info/
+/__pycache__/
+
+# Ingnore files
+
+# Ignore extensions
+*.pyc

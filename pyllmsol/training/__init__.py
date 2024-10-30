@@ -2,19 +2,19 @@
 # coding: utf-8
 # @Author: ArthurBernard
 # @Email: arthur.bernard.92@gmail.com
-# @Date: 2024-10-29 15:23:02
+# @Date: 2024-10-30 14:48:23
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-30 14:51:15
+# @Last modified time: 2024-10-30 15:14:42
 
-""" PyLLMSol package. """
+""" Description. """
 
 # Built-in packages
 
 # Third party packages
 
 # Local packages
-from .training.checkpoint import Checkpoint
-from .training.trainer import DataBrowser, Losses, Trainer
+from .checkpoint import Checkpoint
+from .trainer import DataBrowser, Losses, Trainer
 
 __all__ = [Checkpoint, DataBrowser, Losses, Trainer]
 
