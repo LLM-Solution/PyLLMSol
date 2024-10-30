@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-10-09 17:57:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-30 15:15:29
+# @Last modified time: 2024-10-30 17:18:06
 
 """ Objects to load, save and/or make a checkpoint of models and data. """
 
@@ -69,6 +69,10 @@ class Checkpoint:
         # Create path if not already exist
         self.path.mkdir(parents=True, exist_ok=True)
         LOG.debug("<Checkpoint object is initiated>")
+
+    def __repr__(self):
+        """ Representative method. """
+        return f"Checkpoint(path={self.path}, timestep={self.timestep})"
 
     def __bool__(self) -> bool:
         """ Check if the last checkpoint is older than the timestep.
@@ -270,18 +274,35 @@ def loader(
 
 
 class LoaderLLM:
-    """ Load tokenizer and model. """
+    """ Load tokenizer and model.
+
+    Parameters
+    ----------
+    model_path : Path
+        Path of the model to load.
+    data_path : Path
+        Path of the dataset to load.
+    checkpoint : bool or Checkpoint
+        If True or Checkpoint object then make checkpoint of trained model and
+        data at regular timestep.
+    **kwargs
+        Keyword arguments for the class method
+        `transformers.AutoModelForCausalLM.from_pretrained`, cf transformers
+        documentation.
+
+    """
 
     def __init__(
         self,
-        model_name: Path,
+        model_path: Path,
         data_path: Path,
         checkpoint: bool | Checkpoint,
-        **kw_load_model,
+        **kwargs,
     ):
+        self.checkpoint = checkpoint
         # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(
-            model_name,
+            model_path,
             use_fast=False,
         )
 
@@ -291,8 +312,24 @@ class LoaderLLM:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # Load model and data (or last available checkpoint)
-        self.llm, self.data = loader(model_name, data_path,
-                                     checkpoint=checkpoint, **kw_load_model)
+        try:
+            self.llm, self.data = checkpoint.load(**kwargs)
+
+        except Exception:
+            self.llm = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                **kwargs,
+            )
+            LOG.debug(f"<Model loaded from {model_path}>")
+
+            self.data = loads(Path(data_path).open("r").read())
+            LOG.debug(f"<Dataset of size ({len(data):,}) loaded from "
+                      f"{data_path}>")
+
+            # FIXME: if checkpoint is true => instanciate checkpoint ?
+            if checkpoint:
+                self.checkpoint = Checkpoint()
+                LOG.debug(f"Initialize {self.checkpoint}")
 
 
 if __name__ == "__main__":
