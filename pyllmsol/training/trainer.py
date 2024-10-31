@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:33:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-30 15:13:35
+# @Last modified time: 2024-10-31 08:45:50
 
 """ Trainer objects. """
 
@@ -179,24 +179,16 @@ class DataBrowser:
 
         return self.dataset[i: j]
 
-    def set_description(self, text: str, logger=None):
-        """ Sets a description for the progress bar and logs it.
+    def set_description(self, text: str):
+        """ Sets a description for the progress bar.
 
         Parameters
         ----------
         text : str
             The text to display in the progress bar and log.
-        logger : logging.Logger, optional
-            Logger instance for logging the progress. If None, logging is
-            skipped.
 
         """
         self.pbar.set_description(text)
-
-        if logger is not None:
-            displayer(
-                f"{self.i}/{len(self.dataset)} data - {text}"
-            )
 
     def remaining_data(self) -> list[str]:
         """ Returns the remaining data that has not been iterated.
@@ -268,12 +260,14 @@ class Trainer:
         batch_size: int,
         accumulation_steps: int = 1,
     ):
+        self.logger = getLogger(__name__)
         self.llm = llm
         self.tokenizer = tokenizer
         self.dataset = dataset
         self.batch_size = batch_size
 
         self.accumulation_steps = accumulation_steps
+        self.logger.debug("Trainer is instancied")
 
     def __iter__(self):
         """ Initializes the training iterator. """
@@ -281,6 +275,7 @@ class Trainer:
         self.n_accumulated_grad = 0
         self._data_browser = DataBrowser(self.dataset, self.batch_size)
         self._data_browser.__iter__()
+        self.logger.debug("Start iterate")
 
         return self
 
@@ -294,9 +289,10 @@ class Trainer:
         attention_mask = self.set_mask(encoded_data.attention_mask, input_ids)
 
         # Display current loss and token size of data
-        self._data_browser.set_description(
-            f"{self.losses} - Token size = {encoded_data['input_ids'].size(1)}"
-        )
+        token_size = encoded_data['input_ids'].size(1)
+        descr = f"{self.losses} - Token size = {token_size}"
+        self._data_browser.set_description(descr)
+        self.logger.info(descr)
 
         return input_ids, attention_mask
 

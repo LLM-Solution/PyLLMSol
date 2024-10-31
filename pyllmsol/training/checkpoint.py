@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-10-09 17:57:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-30 17:18:06
+# @Last modified time: 2024-10-30 17:50:36
 
 """ Objects to load, save and/or make a checkpoint of models and data. """
 
@@ -20,9 +20,6 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 # Local packages
 
 __all__ = []
-
-
-LOG = getLogger('checkpoint')
 
 
 class Checkpoint:
@@ -61,6 +58,7 @@ class Checkpoint:
         path: str | Path = "./checkpoint/",
         timestep: int = 300
     ):
+        self.logger =getLogger(__name__)
         # Set variables
         self.path = Path(path) if isinstance(path, str) else path
         self.timestep = timestep
@@ -68,7 +66,7 @@ class Checkpoint:
 
         # Create path if not already exist
         self.path.mkdir(parents=True, exist_ok=True)
-        LOG.debug("<Checkpoint object is initiated>")
+        self.logger.debug("<Checkpoint object is initiated>")
 
     def __repr__(self):
         """ Representative method. """
@@ -128,26 +126,26 @@ class Checkpoint:
             Object to tokenize text data.
 
         """
-        LOG.debug(f"Checkpoint is saving model and data")
+        self.logger.debug(f"Checkpoint is saving model and data")
 
         # Save model
         model_path = self.path / "model"
         llm.save_pretrained(model_path)
-        LOG.debug(f"Model saved at {model_path}")
+        self.logger.debug(f"Model saved at {model_path}")
 
         # save tokenizer
         if tokenizer is not None:
             tokenizer.save_pretrained(model_path)
-            LOG.debug(f"Tokenizer saved at {model_path}")
+            self.logger.debug(f"Tokenizer saved at {model_path}")
 
         # Save data
         if data is not None:
             data_path = self.path / "data.json"
             with (data_path).open("w", encoding="utf8") as f:
                 f.write(dumps(data, ensure_ascii=False))
-                LOG.debug(f"Data of size {len(data):,} saved at {data_path}")
+                self.logger.debug(f"Data of size {len(data):,} saved at {data_path}")
 
-        LOG.info(f"<Checkpoint saved at: '{self.path}'>")
+        self.logger.info(f"<Checkpoint saved at: '{self.path}'>")
 
         # update timestamp
         self.ts = time()
@@ -172,25 +170,25 @@ class Checkpoint:
         # Load model
         model_path = self.path / "model"
         llm = AutoModelForCausalLM.from_pretrained(model_path, **kwargs)
-        LOG.debug(f"Model loaded from {model_path}")
+        self.logger.debug(f"Model loaded from {model_path}")
 
         # Load LoRA weights
         # try:
         #     llm = PeftModel.from_pretrained(llm, self.path / "model")
         #     llm = llm.merge_and_unload()
-        #     LOG.debug("Previous trained LoRA weights are loaded and merged")
+        #     self.logger.debug("Previous trained LoRA weights are loaded and merged")
 
         # except Exception as e:
         #     print(e)
-        #     LOG.debug("There is no previous trained LoRA weights")
+        #     self.logger.debug("There is no previous trained LoRA weights")
 
         # Load data
         data_path = self.path / "data.json"
         with (data_path).open("r") as f:
             data = loads(f.read())
-            LOG.debug(f"Data of size {len(data):,} loaded from {data_path}")
+            self.logger.debug(f"Data of size {len(data):,} loaded from {data_path}")
 
-        LOG.info(f"<Model and dataset loaded from checkpoint>")
+        self.logger.info(f"<Model and dataset loaded from checkpoint>")
 
         return llm, data
 
@@ -205,17 +203,17 @@ class Checkpoint:
                     f.unlink()
 
                 model_path.rmdir()
-                LOG.debug(f"Model deleted from {model_path}")
+                self.logger.debug(f"Model deleted from {model_path}")
 
             # Delete data file
             data_path = self.path / "data.json"
             if data_path.exists():
                 data_path.unlink()
-                LOG.debug(f"Data deleted from {data_path}")
+                self.logger.debug(f"Data deleted from {data_path}")
 
             # Delete folder
             self.path.rmdir()
-            LOG.info(f"Checkpoint deleted from {self.path}")
+            self.logger.info(f"Checkpoint deleted from {self.path}")
 
     def save_trained_model(
         self,
@@ -241,36 +239,17 @@ class Checkpoint:
         path.mkdir(parents=True, exist_ok=True)
 
         llm.save_pretrained(path)
-        LOG.debug(f"Model saved at {path}")
+        self.logger.debug(f"Model saved at {path}")
 
         if tokenizer is not None:
             tokenizer.save_pretrained(path)
-            LOG.debug(f"Tokenizer saved at {path}")
+            self.logger.debug(f"Tokenizer saved at {path}")
 
         # Delete checkpoint
         self.delete()
 
-        LOG.info(f"<Trained model saved at {path} and checkpoint deleted from "
+        self.logger.info(f"<Trained model saved at {path} and checkpoint deleted from "
                  f"{self.path}>")
-
-
-def loader(
-    model_path: str | Path,
-    data_path: str | Path,
-    checkpoint: bool | Checkpoint = False,
-    **kwargs,
-):
-    try:
-        llm, data = checkpoint.load(**kwargs)
-
-    except Exception:
-        llm = AutoModelForCausalLM.from_pretrained(model_path, **kwargs)
-        LOG.debug(f"<Model loaded from {model_path}>")
-
-        data = loads(Path(data_path).open("r").read())
-        LOG.debug(f"<Dataset of size ({len(data):,}) loaded from {data_path}>")
-
-    return llm, data
 
 
 class LoaderLLM:
@@ -299,6 +278,7 @@ class LoaderLLM:
         checkpoint: bool | Checkpoint,
         **kwargs,
     ):
+        self.logger = getLogger(__name__)
         self.checkpoint = checkpoint
         # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -308,7 +288,7 @@ class LoaderLLM:
 
         # /!\ LLaMa model have not pad token
         if self.tokenizer.pad_token is None:
-            LOG.info(f"Set pad with eos token {self.tokenizer.eos_token}")
+            self.logger.info(f"Set pad with eos token {self.tokenizer.eos_token}")
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # Load model and data (or last available checkpoint)
@@ -320,16 +300,15 @@ class LoaderLLM:
                 model_path,
                 **kwargs,
             )
-            LOG.debug(f"<Model loaded from {model_path}>")
+            self.logger.debug(f"<Model loaded from {model_path}>")
 
             self.data = loads(Path(data_path).open("r").read())
-            LOG.debug(f"<Dataset of size ({len(data):,}) loaded from "
-                      f"{data_path}>")
+            self.logger.debug(f"<Dataset of size ({len(self.data):,}) loaded "
+                              f"from {data_path}>")
 
-            # FIXME: if checkpoint is true => instanciate checkpoint ?
             if checkpoint:
                 self.checkpoint = Checkpoint()
-                LOG.debug(f"Initialize {self.checkpoint}")
+                self.logger.debug(f"Initialize {self.checkpoint}")
 
 
 if __name__ == "__main__":
