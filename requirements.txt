@@ -1,0 +1,7 @@
+flask>=3.0.3
+llama-cpp-python>=0.3.1
+peft>=0.13.2
+sentencepiece>=0.2.0
+torch>=2.5.0
+tqdm>=4.66.5
+transformers>=4.45.2
