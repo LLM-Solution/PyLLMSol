@@ -4,11 +4,12 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:33:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-31 08:45:50
+# @Last modified time: 2024-10-31 12:07:24
 
 """ Trainer objects. """
 
 # Built-in packages
+from logging import getLogger
 
 # Third party packages
 from torch import Tensor

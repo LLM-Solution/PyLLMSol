@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-31 09:41:54
+# @Last modified time: 2024-10-31 16:49:25
 
 """ Command Line Interface object for LLM. """
 
@@ -19,11 +19,13 @@ from typing import Generator
 from llama_cpp import Llama
 
 # Local packages
+from pyllmsol._base import _Base
+from pyllmsol.prompt import Prompt
 
 __all__ = []
 
 
-class _BaseCommandLineInterface:
+class _BaseCommandLineInterface(_Base):
     """ Command line interface object to chat with the LLM.
 
     Parameters
@@ -70,20 +72,36 @@ class _BaseCommandLineInterface:
         self,
         model_path: Path | str,
         lora_path: Path | str = None,
-        init_prompt: str = None,
+        init_prompt: str | Prompt = None,
         verbose: bool = False,
         n_ctx: int = 32768,
         n_threads=6,
         **kwargs,
     ):
-        self.logger = getLogger(__name__)
+        if isinstance(prompt, str):
+            self.init_prompt = Prompt(prompt)
+
+        else:
+            self.init_prompt = prompt
+
+        super(_BaseCommandLineInterface, self).__init__(
+            logger=True,
+            model_path=model_path,
+            lora_path=lora_path,
+            init_prompt=self.init_prompt,
+            verbose=verbose,
+            n_ctx=n_ctx,
+            n_threads=n_threads,
+            **kwargs,
+        )
+        # self.logger = getLogger(__name__)
         self.verbose = verbose
         self.n_ctx = n_ctx
-        self.logger.debug(f"verbose={verbose}, n_ctx={n_ctx}, "
-                          f"n_threads={n_threads}, init_prompt={init_prompt}, "
-                          f"kwargs={kwargs}")
-        self.logger.debug(f"model_path={model_path}")
-        self.logger.debug(f"lora_path={lora_path}")
+        # self.logger.debug(f"verbose={verbose}, n_ctx={n_ctx}, "
+        #                   f"n_threads={n_threads}, init_prompt={init_prompt}, "
+        #                   f"kwargs={kwargs}")
+        # self.logger.debug(f"model_path={model_path}")
+        # self.logger.debug(f"lora_path={lora_path}")
 
         # Set LLM model
         self.llm = Llama(
@@ -99,7 +117,6 @@ class _BaseCommandLineInterface:
         self.user_name = "User"
         self.ai_name = "MiniChatBot"
         self.logger.debug(f"user_name={self.user_name}&ai_name={self.ai_name}")
-        self.init_prompt = init_prompt
 
         self.reset_prompt()
 

@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-10-09 17:57:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-30 17:50:36
+# @Last modified time: 2024-10-31 16:44:43
 
 """ Objects to load, save and/or make a checkpoint of models and data. """
 
@@ -18,11 +18,12 @@ from time import time
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # Local packages
+from pyllmsol._base import _Base
 
 __all__ = []
 
 
-class Checkpoint:
+class Checkpoint(_Base):
     """ Object to create checkpoint at regular timestep.
 
     Parameters
@@ -58,7 +59,12 @@ class Checkpoint:
         path: str | Path = "./checkpoint/",
         timestep: int = 300
     ):
-        self.logger =getLogger(__name__)
+        super(Checkpoint, self).__init__(
+            logger=True,
+            path=path,
+            timestep=timestep,
+        )
+        # self.logger =getLogger(__name__)
         # Set variables
         self.path = Path(path) if isinstance(path, str) else path
         self.timestep = timestep
@@ -252,7 +258,7 @@ class Checkpoint:
                  f"{self.path}>")
 
 
-class LoaderLLM:
+class LoaderLLM(_Base):
     """ Load tokenizer and model.
 
     Parameters
@@ -278,7 +284,14 @@ class LoaderLLM:
         checkpoint: bool | Checkpoint,
         **kwargs,
     ):
-        self.logger = getLogger(__name__)
+        # self.logger = getLogger(__name__)
+        super(LoaderLLM, self).__init__(
+            logger=True,
+            model_path=model_path,
+            data_path=data_path,
+            checkpoint=checkpoint,
+            **kwargs
+        )
         self.checkpoint = checkpoint
         # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(
