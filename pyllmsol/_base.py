@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 09:41:32
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-31 16:42:45
+# @Last modified time: 2024-11-02 15:18:01
 
 """ Base objects. """
 
@@ -32,6 +32,12 @@ class _Base:
         Positional arguments to pass to the subclass.
     **kwargs : dict
         Keyword arguments to pass to the subclass.
+
+    Methods
+    -------
+    __str__
+    __repr__
+    to_dict
 
     Attributes
     ----------
@@ -67,8 +73,8 @@ class _Base:
         )
 
         if args or kwargs:
-            self.logger.debug(f"Init {self.__class__.__name__}(args=[{args_debug}], "
-                              f"kwargs=[{kwargs_debug}])")
+            self.logger.debug(f"Init {self.__class__.__name__}(args=["
+                              f"{args_debug}], kwargs=[{kwargs_debug}])")
 
     def _set_logger(self, name):
         self.logger = getLogger(name)
@@ -88,9 +94,7 @@ class _Base:
             attributes.
 
         """
-        params = ', '.join(
-            f'{k}={repr(v)}' for k, v in self.__dict__.items() if not k.startswith('_')
-        )
+        params = ', '.join(f'{k}={repr(v)}' for k, v in self.to_dict())
 
         return f"{self.__class__.__name__}({params})"
 
@@ -113,6 +117,18 @@ class _Base:
         }
 
         return f"{self.__class__.__name__}({pformat(params)})"
+
+    def to_dict(self):
+        """ Convert instance attributes to a dictionary.
+
+        Returns
+        -------
+        dict
+            Dictionary of all non-private attributes and their values.
+
+        """
+
+        return {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
 
 
 if __name__ == "__main__":

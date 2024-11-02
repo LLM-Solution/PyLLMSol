@@ -77,6 +77,7 @@ api.run(host="0.0.0.0", port=5000)
 ```
 
 ## Dependencies
+
 PyLLMSol requires Python 3.6 or later. Core dependencies include:
 
 - `flask>=3.0.3`
@@ -99,7 +100,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Author
 
-Arthur Bernard - contact@llm-solutions.fr
+LLM Solutions - Arthur Bernard - contact@llm-solutions.fr
 
 ___
 

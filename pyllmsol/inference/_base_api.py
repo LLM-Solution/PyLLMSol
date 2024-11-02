@@ -4,24 +4,25 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 08:59:41
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-31 09:23:10
+# @Last modified time: 2024-11-02 16:11:42
 
 """ Description. """
 
 # Built-in packages
-from functools import wraps
-from logging import getLogger
 from pathlib import Path
+from threading impot Thread
 
 # Third party packages
-from flask import Flask, request, make_response, jsonify, stream_with_context, Response
+from flask import Flask, request, Response
 
 # Local packages
+from pyllmsol._base import _Base
+from pyllmsol.inference import _BaseCommandLineInterface
 
 __all__ = []
 
 
-class API:
+class API(_Base):
     """ Flask API object to run a LLM chatbot.
 
     Parameters
@@ -33,10 +34,9 @@ class API:
     lora_path : str, optional
         Path of LoRA weights to load.
     n_ctx : int, optional
-        Max number of tokens in the prompt, default is 4096.
+        Max number of tokens in the prompt, default is 32768.
     debug : bool, optional
-        If True then don't block app if lock_file already exist. It means
-        several servers can run simultanously.
+        Debug mode for flask API, default is False.
 
     Methods
     -------
@@ -69,10 +69,18 @@ class API:
         n_ctx: int = 32768,
         debug: bool = False,
     ):
+        super(API, self).__init__(
+            logger=True,
+            model_path=model_path,
+            init_prompt=init_prompt,
+            lora_path=lora_path,
+            n_ctx=n_ctx,
+            debug=debug,
+        )
         self.init_prompt = init_prompt
         self.debug = debug
 
-        LOG.debug("Start init Flask API object")
+        self.logger.debug("Start init Flask API object")
         self.app = Flask(__name__)
         self.add_route()
 
@@ -91,7 +99,7 @@ class API:
         self.add_get_cli_route()
         self.add_post_cli_route()
 
-        LOG.debug("Flask API object is initiated")
+        self.logger.debug("Flask API object is initiated")
 
     def add_route(self):
         """ Add classical routes. """
@@ -105,7 +113,7 @@ class API:
                 Server sent "Server shutting down...".
 
             """
-            LOG.debug("Shutdown call")
+            self.logger.debug("Shutdown call")
             func = request.environ.get("werkzeug.server.shutdown")
 
             if func is None:
@@ -126,7 +134,7 @@ class API:
                 Status code 200.
 
             """
-            LOG.debug("GET health")
+            self.logger.debug("GET health")
 
             return Response(status=200)
 
@@ -140,7 +148,7 @@ class API:
                 Server sent "pong".
 
             """
-            LOG.debug("pong")
+            self.logger.debug("pong")
 
             return 'pong'
 
@@ -162,7 +170,7 @@ class API:
 
             """
             self.cli.reset_prompt()
-            LOG.debug(f"GET reset prompt")
+            self.logger.debug(f"GET reset prompt")
 
             return Response(status=200)
 
@@ -182,7 +190,7 @@ class API:
 
             """
             prompt = self.cli.prompt_hist.to_json()
-            LOG.debug(f"GET prompt : {prompt}")
+            self.logger.debug(f"GET prompt : {prompt}")
 
             return prompt
 
@@ -210,13 +218,12 @@ class API:
 
             """
             init_prompt = request.json.get("init_prompt")
-            LOG.debug(f"POST set prompt : {init_prompt}")
+            self.logger.debug(f"POST set prompt : {init_prompt}")
             self.cli.init_prompt = init_prompt
 
             return Response(status=200)
 
         @self.app.route("/ask", methods=['POST', 'OPTIONS'])
-        @cors_required
         def ask():
             """ Ask a question to the LLM.
 
@@ -243,7 +250,7 @@ class API:
             question = request.json.get("question")
             stream = request.json.get("stream", True)
             session_id = request.json.get("session_id")
-            LOG.debug(f"ask: {question}")
+            self.logger.debug(f"ask: {question}")
 
             # FIXME : should be escaped ? to avoid code injection
             # return self.cli.ask(escape(question), stream=stream)
@@ -257,7 +264,6 @@ class API:
                 return answer
 
         @self.app.route("/call", methods=['POST', 'OPTIONS'])
-        @cors_required
         def call():
             """ Call the LLM with a given raw prompt.
 
@@ -284,7 +290,7 @@ class API:
             """
             prompt = request.json.get("prompt")
             stream = request.json.get("stream", True)
-            LOG.debug(f"call: {prompt}")
+            self.logger.debug(f"call: {prompt}")
 
             answer = self.cli(prompt, stream=stream)
 
@@ -308,7 +314,7 @@ class API:
 
         """
         if timer > 0:
-            LOG.debug(f"Flask API is running for {timer} seconds")
+            self.logger.debug(f"Flask API is running for {timer} seconds")
             flask_thread = Thread(
                 target=self.app.run,
                 kwargs=kwargs,
@@ -324,17 +330,17 @@ class API:
             timer_thread.join()
 
         else:
-            LOG.debug("Flask API is running")
+            self.logger.debug("Flask API is running")
             self.app.run(**kwargs)
 
     def _timer_to_shutdown(self, duration):
-        LOG.debug(f"API will shutdown in {duration} seconds")
+        self.logger.debug(f"API will shutdown in {duration} seconds")
         sleep(duration)
-        LOG.debug("End of timer, API server shutting down")
+        self.logger.debug("End of timer, API server shutting down")
         exit(0)
 
     def __enter__(self):
-        LOG.debug("Enter in control manager")
+        self.logger.debug("Enter in control manager")
         # Lock file to block an other app to run
         self.lock_file.touch(exist_ok=self.debug)
 
@@ -343,7 +349,7 @@ class API:
     def __exit__(self, exc_type, exc_value, traceback):
         # Unlock file
         self.lock_file.unlink(missing_ok=self.debug)
-        LOG.debug("Exit of control manager")
+        self.logger.debug("Exit of control manager")
 
         return False
 
