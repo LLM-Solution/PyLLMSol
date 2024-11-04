@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 10:37:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-31 10:44:02
+# @Last modified time: 2024-11-04 18:10:43
 
 """ Prompt objects. """
 
@@ -25,10 +25,23 @@ class Prompt:
     text : str
         The prompt text to be stored and formatted for display.
 
+    Methods
+    -------
+    tokenize
+
+    Attributes
+    ----------
+    text : str
+        The prompt text to be stored and formatted for display.
+
     """
 
     def __init__(self, text):
         self.text = text
+
+    def tokenize(self, tokenizer):
+        """ Get tokenized prompts. """
+        return tokenizer(self.text)
 
     def _truncate_text(self, text, max_length=50, front=20, back=20):
         """Truncate text if it exceeds max_length.
@@ -65,6 +78,12 @@ class Prompt:
 
         return (f"{self.__class__.__name__}(text='{truncated_text}', length="
                 f"{len(self.text)})")
+
+    def __format__(self, format_spec):
+        return format(self.text, format_spec)
+
+    def __len__(self):
+        return len(self.text)
 
 
 if __name__ == "__main__":

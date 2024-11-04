@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 09:41:32
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-02 15:18:01
+# @Last modified time: 2024-11-04 09:24:34
 
 """ Base objects. """
 
@@ -94,7 +94,7 @@ class _Base:
             attributes.
 
         """
-        params = ', '.join(f'{k}={repr(v)}' for k, v in self.to_dict())
+        params = ', '.join(f'{k}={repr(v)}' for k, v in self.to_dict().items())
 
         return f"{self.__class__.__name__}({params})"
 
