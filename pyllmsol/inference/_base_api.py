@@ -4,20 +4,20 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 08:59:41
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-02 16:11:42
+# @Last modified time: 2024-11-06 09:57:16
 
 """ Description. """
 
 # Built-in packages
 from pathlib import Path
-from threading impot Thread
+from threading import Thread
 
 # Third party packages
 from flask import Flask, request, Response
 
 # Local packages
 from pyllmsol._base import _Base
-from pyllmsol.inference import _BaseCommandLineInterface
+from pyllmsol.inference._base_cli import _BaseCommandLineInterface
 
 __all__ = []
 

@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-31 16:49:25
+# @Last modified time: 2024-11-07 16:58:08
 
 """ Command Line Interface object for LLM. """
 
@@ -78,11 +78,11 @@ class _BaseCommandLineInterface(_Base):
         n_threads=6,
         **kwargs,
     ):
-        if isinstance(prompt, str):
-            self.init_prompt = Prompt(prompt)
+        if isinstance(init_prompt, str):
+            self.init_prompt = Prompt(init_prompt)
 
         else:
-            self.init_prompt = prompt
+            self.init_prompt = init_prompt
 
         super(_BaseCommandLineInterface, self).__init__(
             logger=True,
@@ -94,14 +94,8 @@ class _BaseCommandLineInterface(_Base):
             n_threads=n_threads,
             **kwargs,
         )
-        # self.logger = getLogger(__name__)
         self.verbose = verbose
         self.n_ctx = n_ctx
-        # self.logger.debug(f"verbose={verbose}, n_ctx={n_ctx}, "
-        #                   f"n_threads={n_threads}, init_prompt={init_prompt}, "
-        #                   f"kwargs={kwargs}")
-        # self.logger.debug(f"model_path={model_path}")
-        # self.logger.debug(f"lora_path={lora_path}")
 
         # Set LLM model
         self.llm = Llama(

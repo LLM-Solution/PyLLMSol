@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 09:41:32
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-04 09:24:34
+# @Last modified time: 2024-11-06 10:01:39
 
 """ Base objects. """
 
@@ -69,7 +69,7 @@ class _Base:
 
         args_debug = ", ".join(f"{type(arg).__name__}({arg})" for arg in args)
         kwargs_debug = ", ".join(
-            f"{k}={type(v).__name__}({v})" for k, v in kwargs.items()
+            f"{k}={type(v).__name__}({repr(v)})" for k, v in kwargs.items()
         )
 
         if args or kwargs:

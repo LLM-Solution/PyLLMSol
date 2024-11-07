@@ -4,13 +4,14 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 10:37:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-04 18:10:43
+# @Last modified time: 2024-11-07 16:56:37
 
 """ Prompt objects. """
 
 # Built-in packages
 
 # Third party packages
+from transformers import AutoTokenizer
 
 # Local packages
 
@@ -24,24 +25,34 @@ class Prompt:
     ----------
     text : str
         The prompt text to be stored and formatted for display.
+    tokenizer : transformer.AutoTokenizer, optional
+        Tokenizer object.
 
     Methods
     -------
+    set_tokenizer
     tokenize
 
     Attributes
     ----------
     text : str
         The prompt text to be stored and formatted for display.
+    tokenizer : transformer.AutoTokenizer
+        Tokenizer object.
 
     """
 
-    def __init__(self, text):
+    def __init__(self, text, tokenizer: AutoTokenizer = None):
         self.text = text
+        self.tokenizer = tokenizer
 
-    def tokenize(self, tokenizer):
+    def tokenize(self):
         """ Get tokenized prompts. """
-        return tokenizer(self.text)
+        return self.tokenizer(self.text)
+
+    def set_tokenizer(self, tokenizer: AutoTokenizer):
+        """ Set tokenizer object. """
+        self.tokenizer = tokenizer
 
     def _truncate_text(self, text, max_length=50, front=20, back=20):
         """Truncate text if it exceeds max_length.
@@ -84,6 +95,16 @@ class Prompt:
 
     def __len__(self):
         return len(self.text)
+
+    def __add__(self, other: str):
+        text = self.text + other
+
+        return Prompt(text=text, tokenizer=self.tokenizer)
+
+    def __iadd__(self, other: str):
+        text = self.text + other
+
+        return Prompt(text=text, tokenizer=self.tokenizer)
 
 
 if __name__ == "__main__":
