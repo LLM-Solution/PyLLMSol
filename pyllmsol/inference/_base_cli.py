@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-08 10:12:03
+# @Last modified time: 2024-11-08 10:43:39
 
 """ Command Line Interface object for LLM. """
 
@@ -110,11 +110,10 @@ class _BaseCommandLineInterface(_Base):
         self.today = strftime("%B %d, %Y")
         self.user_name = "User"
         self.ai_name = "MiniChatBot"
+        self.stop = [f"{self.user_name}:", f"{self.ai_name}:"]
         self.logger.debug(f"user_name={self.user_name}&ai_name={self.ai_name}")
 
         self.reset_prompt()
-
-        self.stop = [f"{self.user_name}:", f"{self.ai_name}:"]
 
     def run(self):
         """ Start the command line interface for the AI chatbot. """
@@ -161,7 +160,7 @@ class _BaseCommandLineInterface(_Base):
         # self.prompt_hist += f"\n{self.ai_name}: {answer}"
         self.prompt_hist += f"{answer}"
 
-        self.logger.debug(f"ANSWER - {self.ai_name}: {answer}")
+        self.logger.debug(f"ANSWER - {self.ai_name}: {Prompt(answer)}")
 
         self._display("")
 
@@ -204,7 +203,8 @@ class _BaseCommandLineInterface(_Base):
     def __call__(
         self,
         prompt: str | Prompt,
-        stream: bool = False
+        stream: bool = False,
+        max_tokens=None,
     ) -> str | Generator[str, None, None]:
         """ Generate an answer by the LLM for a given raw prompt.
 
@@ -223,13 +223,13 @@ class _BaseCommandLineInterface(_Base):
             otherwise return a string.
 
         """
-        self.logger.debug(f"CALL - " + repr(prompt))
+        self.logger.debug(f"CALL - {prompt}")
 
         r = self.llm(
             str(prompt),
             stop=self.stop,
             stream=stream,
-            max_tokens=None,
+            max_tokens=max_tokens,
         )
 
         if stream:
@@ -285,6 +285,9 @@ class _BaseCommandLineInterface(_Base):
 
         else:
             self.prompt_hist = ""
+
+        self.logger.debug("Loading initial prompt")
+        r = self(self.prompt_hist, stream=False, max_tokens=1)
 
     def _stream(self, txt: str):
         for chars in txt:
