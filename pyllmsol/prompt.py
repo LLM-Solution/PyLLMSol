@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 10:37:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-07 16:56:37
+# @Last modified time: 2024-11-08 09:15:34
 
 """ Prompt objects. """
 
@@ -82,7 +82,7 @@ class Prompt:
         return text
 
     def __str__(self):
-        return self._truncate_text(self.text)
+        return self.text
 
     def __repr__(self):
         truncated_text = self._truncate_text(self.text)
@@ -91,7 +91,7 @@ class Prompt:
                 f"{len(self.text)})")
 
     def __format__(self, format_spec):
-        return format(self.text, format_spec)
+        return format(self._truncate_text(self.text), format_spec)
 
     def __len__(self):
         return len(self.text)

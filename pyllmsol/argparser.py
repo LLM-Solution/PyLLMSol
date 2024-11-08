@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:24:56
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-29 15:33:17
+# @Last modified time: 2024-11-08 10:00:08
 
 """ Argument Parser objects. """
 
@@ -20,8 +20,9 @@ __all__ = []
 
 class _BasisArgParser(ArgumentParser):
     """ Basis object for argument parser. """
-    def __init__(self, description: str):
-        super(_BasisParser, self).__init__(description=description)
+    def __init__(self, description: str, file: str = None):
+        super(_BasisArgParser, self).__init__(description=description)
+        self.file = file
 
     def __str__(self) -> str:
         args = self.parse_args()

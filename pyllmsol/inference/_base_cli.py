@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-07 16:58:08
+# @Last modified time: 2024-11-08 10:12:03
 
 """ Command Line Interface object for LLM. """
 
@@ -161,7 +161,7 @@ class _BaseCommandLineInterface(_Base):
         # self.prompt_hist += f"\n{self.ai_name}: {answer}"
         self.prompt_hist += f"{answer}"
 
-        self.logger.debug(f"{self.ai_name}: {answer}")
+        self.logger.debug(f"ANSWER - {self.ai_name}: {answer}")
 
         self._display("")
 
@@ -187,8 +187,8 @@ class _BaseCommandLineInterface(_Base):
             otherwise return a string.
 
         """
-        self.logger.debug(f"ask : {self.user_name}: {question}")
-        self.logger.debug(f"type {type(question)}")
+        self.logger.debug(f"ASK - {self.user_name}: {question}")
+        # self.logger.debug(f"type {type(question)}")
 
         # Get prompt at the suitable format
         prompt = f"{self.user_name}: {question}\n{self.ai_name}: "
@@ -196,23 +196,21 @@ class _BaseCommandLineInterface(_Base):
         self.prompt_hist += prompt
 
         # Remove older prompt if exceed context limit
-        self._check_prompt_limit_context()
+        # self._check_prompt_limit_context()
 
         # Feed the LLM with all the prompt historic available
-        prompt = str(self.prompt_hist)
-
-        return self(str(prompt), stream=stream)
+        return self(self.prompt_hist, stream=stream)
 
     def __call__(
         self,
-        prompt: str,
+        prompt: str | Prompt,
         stream: bool = False
     ) -> str | Generator[str, None, None]:
         """ Generate an answer by the LLM for a given raw prompt.
 
         Parameters
         ----------
-        prompt : str
+        prompt : str or Prompt object
             Raw prompt to feed the LLM.
         stream : bool, optional
             If false (default) the full answer is waited before to be printed,
@@ -225,9 +223,14 @@ class _BaseCommandLineInterface(_Base):
             otherwise return a string.
 
         """
-        self.logger.debug(f"prompt {prompt}")
+        self.logger.debug(f"CALL - " + repr(prompt))
 
-        r = self.llm(prompt, stop=self.stop, stream=stream, max_tokens=None)
+        r = self.llm(
+            str(prompt),
+            stop=self.stop,
+            stream=stream,
+            max_tokens=None,
+        )
 
         if stream:
             return self._stream_call(r)
@@ -242,13 +245,12 @@ class _BaseCommandLineInterface(_Base):
             text += g['choices'][0]['text']
             yield g['choices'][0]['text']
 
-        self.logger.debug(f"answer {text}")
-
     def _check_prompt_limit_context(self):
         # FIXME : How deal with too large prompt such that all the
         #         conversation is removed ?
+        #         Currently not working
         while self._get_n_token(str(self.prompt_hist)) > self.n_ctx:
-            chunked_prompt = self.prompt_hist.split("\n")
+            chunked_prompt = str(self.prompt_hist).split("\n")
             poped_prompt = chunked_prompt.pop(1)
             self.logger.debug(f"Pop the following part: {poped_prompt}")
             self.prompt_hist = "\n".join(chunked_prompt)
@@ -270,13 +272,13 @@ class _BaseCommandLineInterface(_Base):
             self._stream(txt)
 
         if self.verbose:
-            print(f"\n\nThe full prompt was:\n\n{self.prompt_hist}\n\n")
+            self.logger.info(f"The full prompt is:\n\n" + str(self.prompt_hist))
 
         self.logger.debug("<Exit>")
 
     def reset_prompt(self):
         """ Reset the current prompt history with the `init_prompt`. """
-        self.logger.debug("<Reset prompt>")
+        self.logger.debug("Reset prompt:\n" + repr(self.init_prompt))
 
         if self.init_prompt:
             self.prompt_hist = self.init_prompt + "\n"

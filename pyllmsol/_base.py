@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 09:41:32
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-06 10:01:39
+# @Last modified time: 2024-11-08 10:14:48
 
 """ Base objects. """
 
@@ -68,9 +68,7 @@ class _Base:
             self.logger.addHandler(logging.NullHandler())
 
         args_debug = ", ".join(f"{type(arg).__name__}({arg})" for arg in args)
-        kwargs_debug = ", ".join(
-            f"{k}={type(v).__name__}({repr(v)})" for k, v in kwargs.items()
-        )
+        kwargs_debug = ", ".join(f"{k}={repr(v)}" for k, v in kwargs.items())
 
         if args or kwargs:
             self.logger.debug(f"Init {self.__class__.__name__}(args=["
