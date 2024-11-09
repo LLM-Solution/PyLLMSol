@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-08 10:43:39
+# @Last modified time: 2024-11-09 11:08:36
 
 """ Command Line Interface object for LLM. """
 
@@ -40,6 +40,10 @@ class _BaseCommandLineInterface(_Base):
         If True then LLM is run with verbosity. Default is False.
     n_ctx : int, optional
         Maximum number of input tokens for LLM, default is 32 768.
+    n_threads : int, optional
+        Number of threads to compute the inference.
+    **kwargs
+        Keyword arguments for llama_cpp.Llama object, cf documentation.
 
     Methods
     -------
@@ -78,11 +82,23 @@ class _BaseCommandLineInterface(_Base):
         n_threads=6,
         **kwargs,
     ):
+        # Set LLM model
+        self.llm = Llama(
+            model_path=str(model_path),
+            n_ctx=n_ctx,
+            verbose=False,
+            n_threads=n_threads,
+            lora_path=lora_path,
+            **kwargs,
+        )
+
         if isinstance(init_prompt, str):
             self.init_prompt = Prompt(init_prompt)
 
         else:
             self.init_prompt = init_prompt
+
+        self.init_prompt.set_tokenizer(self.llm.tokenize)
 
         super(_BaseCommandLineInterface, self).__init__(
             logger=True,
@@ -96,16 +112,6 @@ class _BaseCommandLineInterface(_Base):
         )
         self.verbose = verbose
         self.n_ctx = n_ctx
-
-        # Set LLM model
-        self.llm = Llama(
-            model_path=str(model_path),
-            n_ctx=n_ctx,
-            verbose=False,
-            n_threads=n_threads,
-            lora_path=lora_path,
-            **kwargs,
-        )
 
         self.today = strftime("%B %d, %Y")
         self.user_name = "User"
@@ -272,7 +278,8 @@ class _BaseCommandLineInterface(_Base):
             self._stream(txt)
 
         if self.verbose:
-            self.logger.info(f"The full prompt is:\n\n" + str(self.prompt_hist))
+            self.logger.info(f"The full prompt is:\n\n{str(self.prompt_hist)}\n"
+                             f"{repr(self.prompt_hist)}")
 
         self.logger.debug("<Exit>")
 

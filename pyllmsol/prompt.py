@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 10:37:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-08 09:15:34
+# @Last modified time: 2024-11-08 17:56:57
 
 """ Prompt objects. """
 
@@ -48,11 +48,16 @@ class Prompt:
 
     def tokenize(self):
         """ Get tokenized prompts. """
-        return self.tokenizer(self.text)
+        return self.tokenizer(self.text.encode('utf-8'))
 
     def set_tokenizer(self, tokenizer: AutoTokenizer):
         """ Set tokenizer object. """
         self.tokenizer = tokenizer
+
+    def get_n_tokens(self):
+        if self.tokenizer:
+
+            return len(self.tokenize())
 
     def _truncate_text(self, text, max_length=50, front=20, back=20):
         """Truncate text if it exceeds max_length.
@@ -88,7 +93,7 @@ class Prompt:
         truncated_text = self._truncate_text(self.text)
 
         return (f"{self.__class__.__name__}(text='{truncated_text}', length="
-                f"{len(self.text)})")
+                f"{len(self.text)}, n_tokens={self.get_n_tokens()})")
 
     def __format__(self, format_spec):
         return format(self._truncate_text(self.text), format_spec)

@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 08:59:41
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-06 09:57:16
+# @Last modified time: 2024-11-09 10:57:05
 
 """ Description. """
 
@@ -56,6 +56,46 @@ class API(_Base):
         several servers can run simultanously.
     init_prompt : str
         Initial prompt to feed the LLM in the CLI.
+
+    Notes
+    -----
+    API Routes:
+
+    - **POST** `/shutdown`
+        - Description: Shuts down the Flask API server.
+        - Response: Returns the message "Server shutting down...".
+
+    - **GET** `/health`
+        - Description: Checks the health/status of the server.
+        - Response: Returns HTTP status code 200.
+
+    - **GET** `/ping`
+        - Description: Pings the server to confirm it is running.
+        - Response: Returns the string "pong".
+
+    - **GET** `/reset_prompt`
+        - Description: Resets the prompt of the LLM.
+        - Response: HTTP status code 200.
+
+    - **GET** `/get_prompt`
+        - Description: Returns the current prompt of the LLM.
+        - Response: The prompt string in JSON format.
+
+    - **POST** `/set_init_prompt`
+        - Description: Sets a new initial prompt for the LLM.
+        - Body: `{"init_prompt": "<new_initial_prompt>"}`
+        - Response: HTTP status code 200.
+
+    - **POST** `/ask`
+        - Description: Sends a question to the LLM.
+        - Body: `{"question": "<question_text>", "stream": true/false,
+            "session_id": "<session_id>"}`
+        - Response: The LLM's answer, streamed or as a full response.
+
+    - **POST** `/call`
+        - Description: Sends a raw prompt to the LLM.
+        - Body: `{"prompt": "<prompt_text>", "stream": true/false}`
+        - Response: The LLM's answer, streamed or as a full response.
 
     """
 
