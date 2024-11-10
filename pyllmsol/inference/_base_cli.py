@@ -4,12 +4,11 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-09 11:08:36
+# @Last modified time: 2024-11-10 10:25:12
 
 """ Command Line Interface object for LLM. """
 
 # Built-in packages
-from logging import getLogger
 from pathlib import Path
 from random import random
 from time import sleep, strftime
@@ -53,6 +52,7 @@ class _BaseCommandLineInterface(_Base):
     exit
     reset_prompt
     run
+    set_init_prompt
 
     Attributes
     ----------
@@ -71,6 +71,8 @@ class _BaseCommandLineInterface(_Base):
         Verbosity.
 
     """
+
+    PromptFactory = Prompt
 
     def __init__(
         self,
@@ -92,13 +94,7 @@ class _BaseCommandLineInterface(_Base):
             **kwargs,
         )
 
-        if isinstance(init_prompt, str):
-            self.init_prompt = Prompt(init_prompt)
-
-        else:
-            self.init_prompt = init_prompt
-
-        self.init_prompt.set_tokenizer(self.llm.tokenize)
+        self.set_init_prompt(init_prompt)
 
         super(_BaseCommandLineInterface, self).__init__(
             logger=True,
@@ -116,10 +112,19 @@ class _BaseCommandLineInterface(_Base):
         self.today = strftime("%B %d, %Y")
         self.user_name = "User"
         self.ai_name = "MiniChatBot"
-        self.stop = [f"{self.user_name}:", f"{self.ai_name}:"]
+        self.stop = [f"\n{self.user_name}:", f"\n{self.ai_name}:"]
         self.logger.debug(f"user_name={self.user_name}&ai_name={self.ai_name}")
 
         self.reset_prompt()
+
+    def set_init_prompt(self, prompt):
+        if isinstance(prompt, str):
+            self.init_prompt = self.PromptFactory(prompt)
+
+        else:
+            self.init_prompt = prompt
+
+        self.init_prompt.set_tokenizer(self.llm.tokenize)
 
     def run(self):
         """ Start the command line interface for the AI chatbot. """
@@ -163,12 +168,11 @@ class _BaseCommandLineInterface(_Base):
             answer += text
             self._display(text, end='', flush=True)
 
-        # self.prompt_hist += f"\n{self.ai_name}: {answer}"
-        self.prompt_hist += f"{answer}"
+        self._display("\n")
 
+        self.prompt_hist += f"{answer}"
         self.logger.debug(f"ANSWER - {self.ai_name}: {Prompt(answer)}")
 
-        self._display("")
 
     def ask(
         self,
@@ -196,7 +200,7 @@ class _BaseCommandLineInterface(_Base):
         # self.logger.debug(f"type {type(question)}")
 
         # Get prompt at the suitable format
-        prompt = f"{self.user_name}: {question}\n{self.ai_name}: "
+        prompt = f"\n{self.user_name}: {question}\n{self.ai_name}: "
 
         self.prompt_hist += prompt
 
@@ -288,10 +292,10 @@ class _BaseCommandLineInterface(_Base):
         self.logger.debug("Reset prompt:\n" + repr(self.init_prompt))
 
         if self.init_prompt:
-            self.prompt_hist = self.init_prompt + "\n"
+            self.prompt_hist = self.init_prompt
 
         else:
-            self.prompt_hist = ""
+            self.prompt_hist = self.PromptFactory("")
 
         self.logger.debug("Loading initial prompt")
         r = self(self.prompt_hist, stream=False, max_tokens=1)
