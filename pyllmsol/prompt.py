@@ -4,11 +4,12 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 10:37:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-09 16:23:41
+# @Last modified time: 2024-11-12 10:29:54
 
 """ Prompt objects. """
 
 # Built-in packages
+from pathlib import Path
 
 # Third party packages
 from transformers import AutoTokenizer
@@ -58,6 +59,7 @@ class Prompt:
 
     Methods
     -------
+    from_text
     get_n_tokens
     set_tokenizer
     tokenize
@@ -74,6 +76,34 @@ class Prompt:
     def __init__(self, text, tokenizer: AutoTokenizer = None):
         self.text = text
         self.tokenizer = tokenizer
+
+    @classmethod
+    def from_text(cls, path: Path, tokenizer: AutoTokenizer = None):
+        """ Create a Prompt instance from a text file.
+
+        This method reads text from a specified file and initializes a `Prompt`
+        object with it. Optionally, a tokenizer can be provided to process the 
+        text.
+
+        Parameters
+        ----------
+        path : Path
+            The file path of the text file to read.
+        tokenizer : transformers.AutoTokenizer, optional
+            A tokenizer object to be associated with the prompt for text
+            processing (default is None).
+
+        Returns
+        -------
+        Prompt
+            A new instance of `Prompt` containing the text from the specified
+            file.
+
+        """
+        with path.open('r') as f:
+            text = f.read()
+
+        return cls(text, tokenizer=tokenizer)
 
     def tokenize(self):
         """ Get tokenized prompts. """
