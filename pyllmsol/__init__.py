@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:23:02
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-30 14:51:15
+# @Last modified time: 2024-11-12 18:38:21
 
 """ PyLLMSol package. """
 
@@ -14,9 +14,11 @@
 
 # Local packages
 from .training.checkpoint import Checkpoint
-from .training.trainer import DataBrowser, Losses, Trainer
+from .training.dataset import DataBrowser, DataSet
+from .training.loss import Losses
+from .training.trainer import Trainer
 
-__all__ = [Checkpoint, DataBrowser, Losses, Trainer]
+__all__ = [Checkpoint, DataBrowser, DataSet, Losses, Trainer]
 
 
 if __name__ == "__main__":

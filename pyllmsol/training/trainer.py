@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:33:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-31 12:07:24
+# @Last modified time: 2024-11-12 18:34:27
 
 """ Trainer objects. """
 
@@ -17,207 +17,34 @@ from tqdm import tqdm
 from transformers import AutoModelForCausalLM, PreTrainedTokenizerBase
 
 # Local packages
+from pyllmsol._base import _Base
 from pyllmsol.training.checkpoint import Checkpoint
+from pyllmsol.training.dataset import DataSet
+from pyllmsol.training.loss import Losses
 from pyllmsol.training.utils import set_mask
 
 __all__ = []
 
 
-class Losses:
-    """ Class for tracking and managing the loss history during training.
+class Trainer(_Base):
+    """ Class to train a language model on a specified dataset.
+
+    This class manages the training loop for a language model using PyTorch.
+    It supports gradient accumulation, custom batch sizes, and tracking of
+    training losses with optional checkpointing.
 
     Parameters
     ----------
-    loss_history : list of float, optional
-        List containing the history of loss values.
-
-    Methods
-    -------
-    __str__
-    __iadd__
-    append
-
-    Attributes
-    ----------
-    current_loss : float
-        The most recent loss value added.
-    loss_history : list of float
-        List containing the history of loss values.
-
-    """
-
-    def __init__(
-        self,
-        loss_history: list[float] = None
-    ):
-        self.loss_history = [] if loss_history is None else loss_history
-
-        if self.loss_history:
-            self.current_loss = loss_history[-1]
-
-        else:
-            self.current_loss = None
-
-    def __str__(self) -> str:
-        """ Returns a string representation of the current loss. """
-        if self.current_loss is None:
-
-            return "Current loss = None"
-
-        return f"Current loss = {self.current_loss:.2e}"
-
-    def append(self, loss: float):
-        """ Append a new loss to the history and the new loss is current one.
-
-        Parameters
-        ----------
-        loss : float
-            Loss to add to the history and become the current loss.
-
-        Returns
-        -------
-        Losses
-            Self object.
-
-        """
-        self.loss_history.append(loss)
-        self.current_loss = loss
-
-        return self
-
-    def __iadd__(self, loss: float):
-        return self.append(loss)
-
-
-class DataBrowser:
-    """ Class to facilitate browsing through a dataset in batches.
-
-    Parameters
-    ----------
-    dataset : list of str
-        The data to iterate over.
-    batch_size : int
-        The size of each data batch.
-    start : int, optional
-        Index to start iterating from, by default 0.
-    end : int, optional
-        Index to stop iterating, by default None, which means the end.
-
-    Methods
-    -------
-    __iter__
-    __next__
-    set_description
-    remaining_data
-
-    Attrtibutes
-    -----------
-    dataset : list of str
-        The data to iterate over.
-    batch_size : int
-        The size of each data batch.
-    start : int
-        The starting index for iteration.
-    end : int
-        The ending index for iteration.
-    i : int
-        Current index in the data iteration.
-
-    """
-
-    def __init__(
-        self,
-        dataset: list[str],
-        batch_size: int,
-        start: int = 0,
-        end: int = None,
-    ):
-        self.dataset = dataset
-        self.batch_size = batch_size
-        self._set_boundary(start, end=end)
-
-    def _set_boundary(self, start: int, end: int = None):
-        T = len(self.dataset)
-        if start < 0 or start > T:
-            raise IndexError(f"Start index {start} is out of bounds for "
-                             f"data of size {T}")
-
-        else:
-            self.start = start
-
-        if end is None:
-            self.end = T
-
-        elif end > T:
-            raise IndexError(f"End index {end} is out of bounds for data "
-                             f"of size {T}")
-
-        elif start >= end:
-            raise IndexError(f"End index {end} must be greater than start "
-                             f"index {start}")
-
-        else:
-            self.end = end
-
-    def __iter__(self):
-        """ Initializes the iterator. """
-        self.i = self.start
-        self.pbar = tqdm(total=self.end - self.start)
-
-        return self
-
-    def __next__(self) -> list[str]:
-        """ Retrieves the next batch of data. """
-        if self.i >= self.end:
-            raise StopIteration
-
-        i = self.i
-        j = min(i + self.batch_size, self.end)
-
-        self.i = j
-
-        self.pbar.update(j - i)
-
-        return self.dataset[i: j]
-
-    def set_description(self, text: str):
-        """ Sets a description for the progress bar.
-
-        Parameters
-        ----------
-        text : str
-            The text to display in the progress bar and log.
-
-        """
-        self.pbar.set_description(text)
-
-    def remaining_data(self) -> list[str]:
-        """ Returns the remaining data that has not been iterated.
-
-        Returns
-        -------
-        list of str
-            Data not yet used.
-
-        """
-        return self.dataset[self.i:]
-
-
-class Trainer:
-    """ Class to train a language model on a given dataset.
-
-    Parameters
-    ----------
-    llm : transformers.ModelForCausalLM
-        The language model to train.
-    tokenizer : transformers.Tokenizer
-        The tokenizer used for encoding the data.
-    dataset : list of str
-        List of text samples for training.
+    llm : transformers.AutoModelForCausalLM
+        The language model to be trained.
+    tokenizer : transformers.PreTrainedTokenizerBase
+        The tokenizer for encoding the data.
+    dataset : list of str or DataSet
+        A list of text samples or a `DataSet` object for training.
     batch_size : int
         Number of samples per batch.
     accumulation_steps : int, optional
-        Number of steps for gradient accumulation, by default 1.
+        Number of steps to accumulate gradients before updating, default is 1.
 
     Methods
     -------
@@ -231,21 +58,21 @@ class Trainer:
     Attributes
     ----------
     accumulation_steps : int
-        Number of steps for gradient accumulation, by default 1.
+        The gradient accumulation steps.
     batch_size : int
         Number of samples per batch.
-    dataset : list of str
-        List of text samples for training.
+    dataset : DataSet
+        Training DataSet instance.
     losses : Losses
-        History loss object.
-    llm : transformers.ModelForCausalLM
-        The language model to train.
+        The object tracking loss history during training.
+    llm : transformers.AutoModelForCausalLM
+        The language model to be trained.
     n_accumulated_grad : int
-        Number of step accumulated gradient.
+        Counter for accumulated gradient steps.
     optimizer : torch.optim.Optimizer
-        Optimizer object.
-    tokenizer : transformers.Tokenizer
-        The tokenizer used for encoding the data.
+        The optimizer used for updating model weights.
+    tokenizer : transformers.PreTrainedTokenizerBase
+        The tokenizer used for data encoding.
 
     """
 
@@ -257,11 +84,24 @@ class Trainer:
         self,
         llm: AutoModelForCausalLM,
         tokenizer: PreTrainedTokenizerBase,
-        dataset: list[str],
+        dataset: list | DataSet,
         batch_size: int,
         accumulation_steps: int = 1,
     ):
-        self.logger = getLogger(__name__)
+        if isinstance(dataset, list):
+            dataset = DataSet(dataset, batch_size=batch_size)
+
+        else:
+            dataset.batch_size = batch_size
+
+        super(Trainer, self).__init__(
+            llm,
+            tokenizer,
+            dataset,
+            batch_size=batch_size,
+            accumulation_steps=accumulation_steps,
+        )
+
         self.llm = llm
         self.tokenizer = tokenizer
         self.dataset = dataset
@@ -274,15 +114,17 @@ class Trainer:
         """ Initializes the training iterator. """
         self.losses = Losses()
         self.n_accumulated_grad = 0
-        self._data_browser = DataBrowser(self.dataset, self.batch_size)
-        self._data_browser.__iter__()
+        # self._data_browser = DataBrowser(self.dataset, self.batch_size)
+        # self._data_browser.__iter__()
+        self.dataset.__iter__()
         self.logger.debug("Start iterate")
 
         return self
 
     def __next__(self) -> tuple[Tensor, Tensor]:
         """ Retrieves the next batch of input IDs and attention masks. """
-        data = self._data_browser.__next__()
+        # data = self._data_browser.__next__()
+        data = self.dataset.__next__()
 
         # Set input data batch
         encoded_data = self.tokenizer(data, return_tensors='pt', padding=True)
@@ -292,7 +134,8 @@ class Trainer:
         # Display current loss and token size of data
         token_size = encoded_data['input_ids'].size(1)
         descr = f"{self.losses} - Token size = {token_size}"
-        self._data_browser.set_description(descr)
+        # self._data_browser.set_description(descr)
+        self.dataset.set_description(descr)
         self.logger.info(descr)
 
         return input_ids, attention_mask
@@ -316,7 +159,8 @@ class Trainer:
                 )
 
             if checkpoint:
-                data = self._data_browser.remaining_data()
+                # data = self._data_browser.remaining_data()
+                self.dataset.set_description(descr)
                 checkpoint(self.llm, data, tokenizer=self.tokenizer)
 
     def set_mask(self, attention_mask: Tensor, input_ids: Tensor) -> Tensor:
@@ -343,15 +187,17 @@ class Trainer:
     def set_optimizer(self, optimizer, parameters=None, **kwargs):
         """ Initializes the optimizer for training.
 
+        Sets the optimizer for training, with optional keyword arguments to
+        configure it. This method prepares the model for training mode.
+
         Parameters
         ----------
-        optimizer : torch.Optimizer
-            Torch optimizer object.
-        parameters :
-            Parameters to trains, default is None then train all parameters
-            of the model.
+        optimizer : torch.optim.Optimizer
+            The optimizer class to use for training.
+        parameters : iterable, optional
+            Parameters to be optimized. If None, uses all model parameters.
         **kwargs
-            Keyword arguments of optimizer object.
+            Additional arguments to configure the optimizer.
 
         """
         self.llm.train()
