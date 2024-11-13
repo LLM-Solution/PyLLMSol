@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-09 15:41:38
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-12 15:58:13
+# @Last modified time: 2024-11-13 20:17:38
 
 """ Prompt objects for Llama 3.1 instruct format.
 
@@ -15,11 +15,12 @@ https://www.llama.com/docs/model-cards-and-prompt-formats/llama3_1/
 """
 
 # Built-in packages
+from dataclasses import dataclass
 from json import loads
 from pathlib import Path
 
 # Third party packages
-from transformers import AutoTokenizer
+from transformers import PreTrainedTokenizerBase
 
 # Local packages
 from pyllmsol.prompt import Prompt
@@ -46,10 +47,82 @@ REPR_ROLES = {
 REPR_SEP = ""
 
 
+@dataclass(eq=False)
+class MessageInstruct:
+    role: str  # Must be one of {'user', 'assistant', 'system'}
+    content: str
+
+    def __init__(
+        self,
+        role: str,
+        content: str,
+        tokenizer: PreTrainedTokenizerBase,
+    ):
+        self.role = role
+        self.content = content
+        self.header = INSTRUCT_ROLES[self.role]
+        self.footer = INSTRUCT_SEP
+
+        self.set_tokens(tokenizer)
+        self.set_mask()
+
+    def set_tokens(self, tokenizer):
+        kwargs = dict(add_special_tokens=False)
+        self.content_tokens = tokenizer.encode(self.content, **kwargs)
+        self.header_tokens = tokenizer.encode(self.header, **kwargs)
+        self.footer_tokens = tokenizer.encode(self.footer, **kwargs)
+
+    @property
+    def text(self):
+        if not self.content:
+            return self.header
+
+        return self.header + self.content + self.footer
+
+    @property
+    def tokens(self):
+        return self.header_tokens + self.content_tokens + self.footer_tokens
+
+    @property
+    def mask(self):
+        return self.header_mask + self.content_mask + self.footer_mask
+
+    def set_mask(self, p=0.5):
+        if self.role == "assistant":
+            self.content_mask = [1 if random() > p else 0 for _ in self.content_tokens]
+
+        else:
+            self.content_mask = [1 for _ in self.content_tokens]
+
+        self.header_mask = [1 for _ in self.header_tokens]
+        self.footer_mask = [1 for _ in self.footer_tokens]
+
+    def __str__(self):
+        return self.header + self.content + self.footer
+
+    def __repr__(self):
+        return f"Messsage(from={self.role}, content={self.content})"
+
+    def __format__(self):
+        return f"{self.role}: {self.content}"
+
+    def __getitem__(self, key):
+        if key == "role":
+            return self.role
+
+        elif key == "content":
+            return self.content
+
+    def __contains__(self, key):
+        return key in ['role', 'content']
+
+
 def formater(
     messages: list[dict[str, str]],
     roles: dict[str, str],
     sep: str="",
+    add_bos: bool = False,
+    add_eos: bool = False,
 ):
     """ Format a chat conversation by combining roles and content.
 
@@ -65,6 +138,9 @@ def formater(
     sep : str, optional
         String separator to use between each formatted chat message, default is
         an empty string.
+    add_bos, add_eos : bool, optional
+        If `True` then add respectively begining and end of sentence tokens.
+        Default is `False`. 
 
     Returns
     -------
@@ -91,9 +167,9 @@ def formater(
 
         raise TypeError("`sep` should be a string.")
 
-    text = ""  # f"{BOS}"
+    text = f"{BOS}" if add_bos else ""
     for message in messages:
-        if not isinstance(message, dict):
+        if not isinstance(message, dict) and not isinstance(message, MessageInstruct):
 
             raise TypeError("Each message should be a dictionary with 'role' "
                             "and 'content'.")
@@ -113,6 +189,8 @@ def formater(
 
         text += f"{roles[role]}{content}{sep}"
 
+    text += f"{EOS}" if add_eos else ""
+
     return text
 
 
@@ -129,7 +207,7 @@ class PromptInstruct(Prompt):
     messages : list of dict
         List of chat messages, where each message is a dictionary with "role"
         and "content" keys. Available roles are {"system", "user", "assistant"}.
-    tokenizer : transformers.AutoTokenizer, optional
+    tokenizer : transformers.PreTrainedTokenizerBase, optional
         Tokenizer instance from Hugging Face's transformers library, used to
         manage tokenization of messages.
 
@@ -138,7 +216,7 @@ class PromptInstruct(Prompt):
     messages : list of dict
         Chat messages stored in a list, where each message is a dictionary with
         "role" and "content" keys.
-    tokenizer : transformers.AutoTokenizer
+    tokenizer : transformers.PreTrainedTokenizerBase
         Tokenizer instance for managing tokenization tasks.
 
     Properties
@@ -188,10 +266,13 @@ class PromptInstruct(Prompt):
 
     def __init__(
         self,
-        messages: list[dict[str, str]],
-        tokenizer: AutoTokenizer = None,
+        messages: list[dict[str, str]] | MessageInstruct,
+        tokenizer: PreTrainedTokenizerBase = None,
     ):
-        if not isinstance(messages, list) or not all(
+        if all(isinstance(m, MessageInstruct) for m in messages):
+            pass
+
+        elif not isinstance(messages, list) or not all(
             isinstance(m, dict) and 'role' in m and 'content' in m
             for m in messages
         ):
@@ -203,7 +284,7 @@ class PromptInstruct(Prompt):
         self.tokenizer = tokenizer
 
     @classmethod
-    def from_json(cls, path: Path, tokenizer: AutoTokenizer = None):
+    def from_json(cls, path: Path, tokenizer: PreTrainedTokenizerBase = None):
         """ Create a Prompt instance from a JSON file.
 
         This method reads JSON from a specified file and initializes a `Prompt`
@@ -214,7 +295,7 @@ class PromptInstruct(Prompt):
         ----------
         path : Path
             The file path of the JSON file to read.
-        tokenizer : transformers.AutoTokenizer, optional
+        tokenizer : transformers.PreTrainedTokenizerBase, optional
             A tokenizer object to be associated with the prompt for text
             processing (default is None).
 
@@ -231,7 +312,7 @@ class PromptInstruct(Prompt):
         return cls(messages, tokenizer=tokenizer)
 
     @classmethod
-    def from_jsonl(cls, path: Path, tokenizer: AutoTokenizer = None):
+    def from_jsonl(cls, path: Path, tokenizer: PreTrainedTokenizerBase = None):
         """ Create a Prompt instance from a JSONL file.
 
         This method reads a JSON Lines (.jsonl) file, where each line is a JSON
@@ -242,7 +323,7 @@ class PromptInstruct(Prompt):
         ----------
         path : Path
             The file path of the JSONL file to read.
-        tokenizer : transformers.AutoTokenizer, optional
+        tokenizer : transformers.PreTrainedTokenizerBase, optional
             A tokenizer object to be associated with the prompt for text
             processing (default is None).
 
@@ -286,10 +367,36 @@ class PromptInstruct(Prompt):
 
     @property
     def text(self):
-        return formater(self.messages, roles=INSTRUCT_ROLES, sep=INSTRUCT_SEP)
+        # return formater(self.messages, roles=INSTRUCT_ROLES, sep=INSTRUCT_SEP)
+        return "".join(m.text for m in self.messages)
+
+    @property
+    def tokens(self):
+        if not self.tokenizer:
+
+            return None
+
+        return self._tokenize(self.text, add_special_tokens=True)
+
+    def set_tokenizer(self, tokenizer: PreTrainedTokenizerBase):
+        """ Set tokenizer object.
+
+        Parameters
+        ----------
+        tokenizer : transformers.PreTrainedTokenizerBase, optional
+            A tokenizer object to be associated with the prompt for text
+            processing.
+
+        """
+        self.tokenizer = tokenizer
+
+        for message in self.messages:
+            content = message['content']
+            tokens = self._tokenize(content, add_special_tokens=False)
+            message.update(tokens=tokens)
 
     def append(self, message: dict[str, str]):
-        """Append a new message to the conversation.
+        """ Append a new message to the conversation.
 
         Parameters
         ----------
@@ -314,14 +421,35 @@ class PromptInstruct(Prompt):
             raise ValueError("`message` must be a dictionary with 'role' and "
                              "'content' keys.")
 
+        # Check if tokenizer is set
+        if self.tokenizer:
+            # Then compute tokenize new messages
+            content = message['content']
+            tokens = self._tokenize(content, add_special_tokens=False)
+            message.update(tokens=tokens)
+
         self.messages.append(message)
 
-    def __add__(self, other: dict[str: str]):
-        self.append(other)
+    def __add__(self, other: dict[str: str] | list[dict[str, str]]) -> 'PromptInstruct':
+        messages = self.messages.copy()
 
-        return self
+        if isinstance(other, list):
+            for arg in other:
+                if isinstance(arg, MessageInstruct):
+                    messages.append(arg)
 
-    def __iadd__(self, other: dict[str, str]):
+                else:
+                    messages.append(MessageInstruct(**arg, tokenizer=self.tokenizer))
+
+        elif isinstance(other, MessageInstruct):
+            messages.append(other)
+
+        else:
+            messages.append(MessageInstruct(**other, tokenizer=self.tokenizer))
+
+        return self.__class__(messages, tokenizer=self.tokenizer)
+
+    def __iadd__(self, other: dict[str, str]) -> 'PromptInstruct':
         self.append(other)
 
         return self
