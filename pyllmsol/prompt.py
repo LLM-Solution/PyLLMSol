@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 10:37:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-12 10:29:54
+# @Last modified time: 2024-11-13 08:10:04
 
 """ Prompt objects. """
 
@@ -12,7 +12,7 @@
 from pathlib import Path
 
 # Third party packages
-from transformers import AutoTokenizer
+from transformers import PreTrainedTokenizerBase
 
 # Local packages
 
@@ -54,7 +54,7 @@ class Prompt:
     ----------
     text : str
         The prompt text to be stored and formatted for display.
-    tokenizer : transformer.AutoTokenizer, optional
+    tokenizer : transformer.PreTrainedTokenizerBase, optional
         Tokenizer object.
 
     Methods
@@ -68,17 +68,26 @@ class Prompt:
     ----------
     text : str
         The prompt text to be stored and formatted for display.
-    tokenizer : transformer.AutoTokenizer
+    tokenizer : transformer.PreTrainedTokenizerBase
         Tokenizer object.
 
     """
 
-    def __init__(self, text, tokenizer: AutoTokenizer = None):
+    tokenizer = None
+    tokens = None
+
+    def __init__(self, text, tokenizer: PreTrainedTokenizerBase = None):
         self.text = text
-        self.tokenizer = tokenizer
+
+        if tokenizer:
+            self.set_tokenizer(tokenizer=tokenizer)
 
     @classmethod
-    def from_text(cls, path: Path, tokenizer: AutoTokenizer = None):
+    def from_text(
+        cls,
+        path: Path,
+        tokenizer: PreTrainedTokenizerBase = None,
+    ) -> 'Prompt':
         """ Create a Prompt instance from a text file.
 
         This method reads text from a specified file and initializes a `Prompt`
@@ -89,7 +98,7 @@ class Prompt:
         ----------
         path : Path
             The file path of the text file to read.
-        tokenizer : transformers.AutoTokenizer, optional
+        tokenizer : transformers.PreTrainedTokenizerBase, optional
             A tokenizer object to be associated with the prompt for text
             processing (default is None).
 
@@ -105,15 +114,56 @@ class Prompt:
 
         return cls(text, tokenizer=tokenizer)
 
-    def tokenize(self):
-        """ Get tokenized prompts. """
-        return self.tokenizer(self.text.encode('utf-8'))
+    def _tokenize(
+        self,
+        text: str,
+        add_special_tokens: bool = False,
+    ) -> list[str]:
+        """ Get tokenized prompts.
 
-    def set_tokenizer(self, tokenizer: AutoTokenizer):
-        """ Set tokenizer object. """
+        Parameters
+        ----------
+        text : str
+            Text to tokenize.
+        add_special_tokens : bool, optional
+            If `True` add special tokens (e.g BOS and EOS), default is `False`.
+
+        Returns
+        -------
+        list of str
+            Sequence of tokens.
+
+        """
+        if isinstance(self.tokenizer, PreTrainedTokenizerBase):
+            # Tokenizer from `transformers` library
+
+            return self.tokenizer.encode(
+                text,
+                add_special_tokens=add_special_tokens,
+            )
+
+        else:
+            # Tokenizer from `llama_cpp` library
+
+            return self.tokenizer(
+                text.encode('utf-8'),
+                add_special_tokens=add_special_tokens,
+            )
+
+    def set_tokenizer(self, tokenizer: PreTrainedTokenizerBase):
+        """ Set tokenizer object.
+
+        Parameters
+        ----------
+        tokenizer : transformers.PreTrainedTokenizerBase, optional
+            A tokenizer object to be associated with the prompt for text
+            processing.
+
+        """
         self.tokenizer = tokenizer
+        self.tokens = self._tokenize(self.text, add_special_tokens=True)
 
-    def get_n_tokens(self):
+    def get_n_tokens(self) -> int:
         """ Compute the number of tokens in the prompt.
 
         Returns
@@ -124,29 +174,29 @@ class Prompt:
         """
         if self.tokenizer:
 
-            return len(self.tokenize())
+            return len(self.tokens)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.text
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         truncated_text = truncate_text(self.text)
 
         return (f"{self.__class__.__name__}(text='{truncated_text}', length="
                 f"{len(self.text)}, n_tokens={self.get_n_tokens()})")
 
-    def __format__(self, format_spec):
+    def __format__(self, format_spec) -> str:
         return format(truncate_text(self.text), format_spec)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.text)
 
-    def __add__(self, other: str):
+    def __add__(self, other: str) -> 'Prompt':
         text = self.text + other
 
         return Prompt(text=text, tokenizer=self.tokenizer)
 
-    def __iadd__(self, other: str):
+    def __iadd__(self, other: str) -> 'Prompt':
         text = self.text + other
 
         return Prompt(text=text, tokenizer=self.tokenizer)

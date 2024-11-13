@@ -4,14 +4,16 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-12 16:31:57
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-12 18:50:39
+# @Last modified time: 2024-11-13 15:58:21
 
 """ Dataset objects. """
 
 # Built-in packages
+from json import loads
 from pathlib import Path
 
 # Third party packages
+from tqdm import tqdm
 
 # Local packages
 
@@ -149,6 +151,9 @@ class DataBrowser:
 
         return self.dataset[i: j]
 
+    def __getitem__(self, key):
+        return self.dataset[key]
+
     def set_description(self, text: str):
         """ Set a description for the progress bar.
 
@@ -187,7 +192,7 @@ class DataSet(DataBrowser):
     dataset : list
         The dataset to iterate over, typically loaded from JSON or JSONL.
     batch_size : int
-        The size of each data batch.
+        The size of each data batch, default is 1.
     start : int, optional
         The index to start iterating from, default is 0.
     end : int, optional
@@ -205,7 +210,7 @@ class DataSet(DataBrowser):
     def __init__(
         self,
         dataset: list,
-        batch_size: int,
+        batch_size: int = 1,
         start: int = 0,
         end: int = None,
     ):
@@ -220,7 +225,7 @@ class DataSet(DataBrowser):
     def from_json(
         cls,
         path: Path,
-        batch_size: int,
+        batch_size: int = 1,
         start: int = 0,
         end: int = None,
     ):
@@ -235,7 +240,7 @@ class DataSet(DataBrowser):
         path : Path
             The file path of the JSON file to load.
         batch_size : int
-            The size of each data batch for iteration.
+            The size of each data batch for iteration, default is 1.
         start : int, optional
             The index to start iterating from, default is 0.
         end : int, optional
@@ -263,7 +268,7 @@ class DataSet(DataBrowser):
     def from_jsonl(
         cls,
         path: Path,
-        batch_size: int,
+        batch_size: int = 1,
         start: int = 0,
         end: int = None,
     ):
@@ -278,7 +283,7 @@ class DataSet(DataBrowser):
         path : Path
             The file path of the JSONL file to load.
         batch_size : int
-            The size of each data batch for iteration.
+            The size of each data batch for iteration, default is 1.
         start : int, optional
             The index to start iterating from, default is 0.
         end : int, optional

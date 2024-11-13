@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-10-09 17:57:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-31 16:44:43
+# @Last modified time: 2024-11-13 07:12:16
 
 """ Objects to load, save and/or make a checkpoint of models and data. """
 
@@ -16,6 +16,7 @@ from time import time
 
 # Third party packages
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import PreTrainedTokenizerBase
 
 # Local packages
 from pyllmsol._base import _Base
@@ -94,7 +95,7 @@ class Checkpoint(_Base):
         self,
         llm: AutoModelForCausalLM,
         data: list,
-        tokenizer: AutoTokenizer = None
+        tokenizer: PreTrainedTokenizerBase = None
     ):
         """ Save checkpoint if the last checkpoint is older than the timestep.
 
@@ -118,7 +119,7 @@ class Checkpoint(_Base):
         self,
         llm: AutoModelForCausalLM,
         data: list = None,
-        tokenizer: AutoTokenizer = None,
+        tokenizer: PreTrainedTokenizerBase = None,
     ):
         """ Save the checkpoint of the LLM model and data.
 
@@ -225,7 +226,7 @@ class Checkpoint(_Base):
         self,
         llm: AutoModelForCausalLM,
         path: str | Path,
-        tokenizer: AutoTokenizer = None,
+        tokenizer: PreTrainedTokenizerBase = None,
     ):
         """ Save the trained model and delete checkpoint.
 

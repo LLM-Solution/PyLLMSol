@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:33:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-12 18:34:27
+# @Last modified time: 2024-11-13 15:59:34
 
 """ Trainer objects. """
 
@@ -114,17 +114,14 @@ class Trainer(_Base):
         """ Initializes the training iterator. """
         self.losses = Losses()
         self.n_accumulated_grad = 0
-        # self._data_browser = DataBrowser(self.dataset, self.batch_size)
-        # self._data_browser.__iter__()
-        self.dataset.__iter__()
+        iter(self.dataset)
         self.logger.debug("Start iterate")
 
         return self
 
     def __next__(self) -> tuple[Tensor, Tensor]:
         """ Retrieves the next batch of input IDs and attention masks. """
-        # data = self._data_browser.__next__()
-        data = self.dataset.__next__()
+        data = next(self.dataset)
 
         # Set input data batch
         encoded_data = self.tokenizer(data, return_tensors='pt', padding=True)
@@ -134,7 +131,6 @@ class Trainer(_Base):
         # Display current loss and token size of data
         token_size = encoded_data['input_ids'].size(1)
         descr = f"{self.losses} - Token size = {token_size}"
-        # self._data_browser.set_description(descr)
         self.dataset.set_description(descr)
         self.logger.info(descr)
 
@@ -159,7 +155,6 @@ class Trainer(_Base):
                 )
 
             if checkpoint:
-                # data = self._data_browser.remaining_data()
                 self.dataset.set_description(descr)
                 checkpoint(self.llm, data, tokenizer=self.tokenizer)
 
