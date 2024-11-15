@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:33:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-13 15:59:34
+# @Last modified time: 2024-11-15 10:49:20
 
 """ Trainer objects. """
 
@@ -96,7 +96,7 @@ class Trainer(_Base):
 
         super(Trainer, self).__init__(
             llm,
-            tokenizer,
+            # tokenizer,
             dataset,
             batch_size=batch_size,
             accumulation_steps=accumulation_steps,
