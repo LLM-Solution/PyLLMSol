@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-10 10:25:12
+# @Last modified time: 2024-11-15 11:36:18
 
 """ Command Line Interface object for LLM. """
 
@@ -19,7 +19,7 @@ from llama_cpp import Llama
 
 # Local packages
 from pyllmsol._base import _Base
-from pyllmsol.prompt import Prompt
+from pyllmsol.data.prompt import Prompt
 
 __all__ = []
 
