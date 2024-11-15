@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:28
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-14 19:12:12
+# @Last modified time: 2024-11-15 11:24:35
 
 """ Chat data objects for dialogue data to inferencing or training LLMs.
 
@@ -19,13 +19,15 @@ https://www.llama.com/docs/model-cards-and-prompt-formats/llama3_1/
 # Built-in packages
 from __future__ import annotations
 from pathlib import Path
+from json import loads
 
 # Third party packages
 from llama_cpp import LlamaTokenizer
+from torch import tensor
 from transformers import PreTrainedTokenizerBase
 
 # Local packages
-from pyllmsol.data._base_data import _Base, _BaseData
+from pyllmsol.data._base_data import _Base, _BaseData, _BaseDataSet
 from pyllmsol.data.utils import truncate_text
 
 __all__ = []
@@ -111,18 +113,24 @@ class Message(_Base):
     >>> str(msg)
     '<|start_header_id|>user<|end_header_id|>\n\nHello!<|eot_id|>'
     >>> repr(msg)
-    Messsage(from="user", content="Hello!")
+    Messsage(from=user, content=Hello!)
     >>> msg['role']
     'user'
     >>> msg = Message(role='assistant', content='Hello World !', tokenizer=tokenizer)
     >>> msg.tokens
-    [0, 1, 2, 3, 4]
+    [128006, 78191, 128007, 271, 9906, 4435, 758, 128009]
     >>> msg.mask
-    [1, 0, 0, 0, 0]
+    [1, 1, 1, 1, 0, 0, 0, 0]
 
     """
 
-    def __init__(self, role: str, content: str, tokenizer: TokenizerType):
+    def __init__(
+        self,
+        role: str,
+        content: str,
+        tokenizer: TokenizerType,
+        **kwargs,
+    ):
         if role not in ROLES:
             raise ValueError(f"Invalid role '{role}'. Expected one of "
                              f"{list(ROLES.keys())}.")
@@ -132,6 +140,7 @@ class Message(_Base):
         self.content = content
         self.header = ROLES[self.role]
         self.footer = SEP
+        self.metadata = kwargs
 
     @property
     def text(self):
@@ -261,6 +270,9 @@ class Message(_Base):
                 tokenizer=tokenizer,
             )
 
+    def to_json(self):
+        return dict(role=self.role, content=self.content, **self.metadata)
+
 
 class Chat(_BaseData, _Base):
     """ Chat object that manages a sequence of messages within a conversation.
@@ -280,16 +292,11 @@ class Chat(_BaseData, _Base):
 
     Methods
     -------
-    from_json(path, tokenizer)
-        Class method to create a Chat instance from a JSON file.
-    from_jsonl(path, tokenizer)
-        Class method to create a Chat instance from a JSONL file.
-    pad(total_tokens)
-        Pads the tokens and mask of the chat to a specified length.
-    append(message) -> Chat
-        Appends a single message to the chat.
-    add(item, inplace=False) -> Chat
-        Adds a message or chat instance to the conversation.
+    from_json
+    from_jsonl
+    pad
+    append
+    add
 
     Attributes
     ----------
@@ -453,7 +460,10 @@ class Chat(_BaseData, _Base):
             Concatenated attention mask for the conversation.
 
         """
-        return [token for message in self.items for token in message.mask]
+        mask = [1]  # for BOS token added
+        mask += [token for message in self.items for token in message.mask]
+
+        return mask
 
     def pad(self, total_tokens: int):
         """ Pad the `tokens` and `mask` attributes to a specified length.
@@ -532,8 +542,12 @@ class Chat(_BaseData, _Base):
 
         Examples
         --------
-        >>> chat = Chat({"role": "user", "content": "New message"})
-        >>> chat.add(Message(role="assistant", content="Reply"), inplace=True)
+        >>> items = [{"role": "user", "content": "New message"}]
+        >>> chat = Chat(items, tokenizer=tokenizer)
+        >>> chat.add(
+        ...     Message(role="assistant", content="Rep", tokenizer=tokenizer),
+        ...     inplace=True,
+        ... )
 
         """
         if isinstance(item, self.__class__):
@@ -570,10 +584,10 @@ class Chat(_BaseData, _Base):
             If the role is not in the predefined roles.
 
         """
-        if role not in INSTRUCT_ROLES:
+        if role not in ROLES:
 
             raise KeyError(f"Role '{role}' is not recognized. Available roles: "
-                           f"{list(INSTRUCT_ROLES.keys())}.")
+                           f"{list(ROLES.keys())}.")
 
         self.append({"role": role, "content": content})
 
@@ -598,13 +612,145 @@ class Chat(_BaseData, _Base):
             If the role is not in the predefined roles.
 
         """
-        if role not in INSTRUCT_ROLES:
+        if role not in ROLES:
             raise KeyError(f"Role '{role}' is not recognized. Available roles: "
-                           f"{list(INSTRUCT_ROLES.keys())}.")
+                           f"{list(ROLES.keys())}.")
 
         new_message = Message(role=role, content='', tokenizer=self.tokenizer)
 
         return self.append(new_message)
+
+
+class DataSet(_BaseDataSet, _Base):
+    """ A DataSet class for managing and processing a collection of chat data.
+
+    The DataSet class provides utilities for loading, batching, padding, and
+    tokenizing chat data. It is designed for use in training and inference
+    tasks with language models. This class extends `_BaseDataSet`, enabling
+    efficient data handling and iteration.
+
+    Parameters
+    ----------
+    items : list of Chat or list of list of Message
+        A collection of chats or nested lists. Each element can be:
+        - A `Chat` object.
+        - A list of `Message` objects.
+        - A list of dictionaries, where each dictionary represents a message 
+          with keys 'role' and 'content'.
+    tokenizer : TokenizerType
+        Tokenizer object for processing text content in the dataset.
+    batch_size : int, optional
+        The number of items to include in each batch during iteration (default is 1).
+    start : int, optional
+        The index to start iteration from (default is 0).
+    end : int, optional
+        The index to stop iteration (default is None, meaning until the end).
+
+    Methods
+    -------
+    __iter__
+    __next__
+    get_padded
+    from_json
+    from_jsonl
+    set_description
+    remaining_data
+
+    Attributes
+    ----------
+    items : list of Chat
+        The collection of chats in the dataset, converted to `Chat` objects 
+        if not already.
+    batch_size : int
+        The number of items in each batch during iteration.
+    start : int
+        The starting index for iteration.
+    end : int
+        The ending index for iteration.
+    tokenizer : TokenizerType
+        Tokenizer object for processing text data.
+
+    Properties
+    ----------
+    text : str
+        Full concatenated text of all items in the dataset.
+    tokens : list of int
+        Tokenized representation of the dataset's text.
+    mask : list of int
+        Attention mask for the dataset.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified JSON or JSONL file does not exist.
+    ValueError
+        If batch size, start, or end values are invalid.
+    TypeError
+        If items in the dataset are of incompatible types.
+
+    Examples
+    --------
+    >>> tokenizer = MockTokenizer()
+    >>> path = Path('root/data.json')
+    >>> dataset = DataSet.from_json(
+    ...     path=path,
+    ...     batch_size=2,
+    ...     tokenizer=tokenizer,
+    ... )
+    >>> padded_tokens, padded_mask = dataset.get_padded()
+    >>> for batch in dataset:
+    ...     print(batch)
+
+    """
+
+    def __init__(
+        self,
+        items: list[Chat | list[Message | dict[str, str]]],
+        tokenizer: TokenizerType,
+        batch_size: int = 1,
+        start: int = 0,
+        end: int = None,
+    ):
+        _Base.__init__(self, items, Chat, list, tokenizer)
+        self.batch_size = batch_size
+        self._set_boundary(start, end=end)
+
+    def get_padded(
+        self,
+        return_tensor: bool = False,
+    ) -> list[list[int]] | tensor:
+        """ Pad all chats in the dataset to the same length.
+
+        Pads each chat in the dataset to the length of the longest chat,
+        creating uniform-sized token and mask arrays for each chat.
+
+        Parameters
+        ----------
+        return_tensor : bool, optional
+            If True, returns data as `torch.Tensor` objects; otherwise, returns
+            lists.
+
+        Returns
+        -------
+        list of list of int or torch.tensor
+            Extended with PAD tokens list of tokens.
+        list of list of int or torch.tensor
+            Extended with 0 list of mask.
+
+        """
+        max_tokens = max(chat.get_n_tokens() for chat in self.items)
+
+        tokens, mask = [], []
+        for chat in self.items:
+            _tokens, _mask = chat.pad(max_tokens)
+            tokens.append(_tokens)
+            mask.append(_mask)
+
+        if return_tensor:
+            tokens = tensor(tokens)
+            mask = tensor(mask)
+
+        return tokens, mask
 
 
 if __name__ == "__main__":

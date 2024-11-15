@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 14:28:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-14 19:07:13
+# @Last modified time: 2024-11-15 09:54:17
 
 """ Test `data/chat.py` script. """
 
@@ -15,7 +15,7 @@ from llama_cpp import LlamaTokenizer
 import pytest
 
 # Local packages
-from pyllmsol.data.chat import Chat, Message, ROLES, SEP
+from pyllmsol.data.chat import DataSet, Chat, Message, ROLES, SEP
 
 __all__ = []
 
@@ -25,13 +25,19 @@ class MockTokenizer(LlamaTokenizer):
         self.pad_token_id = 0
 
     def __call__(self, text, add_special_tokens=False):
-        return [i for i, _ in enumerate(text)]
+        tokens = [0] if add_special_tokens else []
+        tokens += [i for i, _ in enumerate(text)]
+
+        return tokens
 
     def __bool__(self):
         return True
 
     def encode(self, text, add_special_tokens=False):
-        return [i for i, _ in enumerate(text.decode('utf-8'))]
+        tokens = [0] if add_special_tokens else []
+        tokens += [i for i, _ in enumerate(text.decode('utf-8'))]
+
+        return tokens
 
 
 @pytest.fixture
@@ -51,6 +57,16 @@ def sample_chat(mock_tokenizer):
         {"role": "assistant", "content": "How can I help?"},
     ]
     return Chat(items=items, tokenizer=mock_tokenizer)
+
+
+@pytest.fixture
+def sample_dataset(mock_tokenizer):
+    items = [[
+        {"role": "user", "content": "Hello!"},
+        {"role": "assistant", "content": "How can I help?"},
+    ]]
+
+    return DataSet(items=items, tokenizer=mock_tokenizer)
 
 
 # Test Message object
@@ -152,11 +168,12 @@ def test_chat_text_property(sample_chat):
 
 
 def test_chat_tokens_property(sample_chat):
-    assert sample_chat.tokens == [i for i in range(len(sample_chat.text))]
+    assert sample_chat.tokens == [0] + [i for i in range(len(sample_chat.text))]
 
 
 def test_chat_mask_property(sample_chat):
-    expected_mask = [1 for i in range(len(sample_chat.items[0].text))]
+    expected_mask = [1]
+    expected_mask += [1 for i in range(len(sample_chat.items[0].text))]
     expected_mask += [1 for i in range(len(sample_chat.items[1].header))]
     expected_mask += [0 for i in range(len(sample_chat.items[1].content))]
     expected_mask += [0 for i in range(len(sample_chat.items[1].footer))]
@@ -199,6 +216,89 @@ def test_add_invalid_role_in_chat(sample_chat):
     invalid_message = {"role": "invalid_role", "content": "Should fail"}
     with pytest.raises(ValueError, match="Invalid role"):
         sample_chat.add(invalid_message, inplace=True)
+
+
+# Test DataSet object
+
+def test_dataset_initialization_with_chats(mock_tokenizer, sample_chat):
+    # Test initialization with Chat objects
+    dataset = DataSet(items=[sample_chat], tokenizer=mock_tokenizer)
+    assert len(dataset.items) == 1
+    assert isinstance(dataset.items[0], Chat)
+
+
+def test_dataset_initialization_with_message_lists(mock_tokenizer, sample_message):
+    # Test initialization with lists of Message objects
+    items = [[sample_message], [sample_message, sample_message]]
+    dataset = DataSet(items=items, tokenizer=mock_tokenizer)
+    assert len(dataset.items) == 2
+    assert isinstance(dataset.items[0], Chat)
+
+
+def test_dataset_initialization_with_dict_lists(mock_tokenizer):
+    # Test initialization with lists of dictionaries
+    items = [
+        [
+            dict(role='system', content='Dialogue'),
+            dict(role='user', content='Hello'),
+            dict(role='assistant', content='Hi!'),
+        ],
+        [dict(role="user", content="Hello Wolrd!")]
+    ]
+    dataset = DataSet(items=items, tokenizer=mock_tokenizer)
+    assert len(dataset.items) == 2
+    assert isinstance(dataset.items[0], Chat)
+
+
+def test_dataset_get_padded(sample_chat, mock_tokenizer):
+    # Test get_padded method
+    dataset = DataSet(items=[sample_chat], tokenizer=mock_tokenizer)
+    tokens, mask = dataset.get_padded()
+    assert len(tokens) == len(mask)
+    assert len(tokens[0]) == len(mask[0])
+    assert tokens[0][:sample_chat.get_n_tokens()] == sample_chat.tokens
+
+
+def test_dataset_iteration(sample_chat, mock_tokenizer):
+    # Test iteration through the dataset
+    dataset = DataSet(items=[sample_chat] * 3, tokenizer=mock_tokenizer, batch_size=2)
+    iter(dataset)
+    batches = [next(dataset), next(dataset)]
+    assert len(batches[0]) == 2
+    assert len(batches[1]) == 1
+    assert isinstance(batches[0], DataSet)
+    assert len(batches[0].items) == 2
+
+
+def test_dataset_from_json(mock_tokenizer, tmp_path):
+    # Test from_json method
+    json_data = '[[{"role": "user", "content": "Hi!"}]]'
+    json_file = tmp_path / "data.json"
+    json_file.write_text(json_data)
+
+    dataset = DataSet.from_json(path=json_file, tokenizer=mock_tokenizer)
+    assert len(dataset.items) == 1
+    assert isinstance(dataset.items[0], Chat)
+
+
+def test_dataset_from_jsonl(mock_tokenizer, tmp_path):
+    # Test from_jsonl method
+    jsonl_data = ('[{"role": "user", "content": "Hi!"}, {"role": "assistant", "content": "Hello!"}]\n'
+                  '[{"role": "assistant", "content": "Hi!"}]')
+    jsonl_file = tmp_path / "data.jsonl"
+    jsonl_file.write_text(jsonl_data)
+
+    dataset = DataSet.from_jsonl(path=jsonl_file, tokenizer=mock_tokenizer)
+    assert len(dataset.items) == 2
+    assert isinstance(dataset.items[0], Chat)
+
+
+def test_dataset_add(sample_message, mock_tokenizer):
+    # Test adding new items
+    dataset = DataSet(items=[], tokenizer=mock_tokenizer)
+    dataset.add([sample_message], inplace=True)
+    assert len(dataset.items) == 1
+    assert isinstance(dataset[0], Chat)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:05
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-14 16:49:54
+# @Last modified time: 2024-11-15 11:56:41
 
 """ Base objects for text data to inferencing or training LLMs. """
 
@@ -148,9 +148,10 @@ class _Base(ABC):
             )
 
         elif isinstance(self.tokenizer, LlamaTokenizer):
-            return self.tokenizer(
-                text.encode('utf-8'),
-                add_special_tokens=add_special_tokens,
+            return self.tokenizer.encode(
+                text,  # .encode('utf-8'),
+                add_bos=add_special_tokens,
+                special=True,
             )
 
         else:
@@ -204,6 +205,12 @@ class _Base(ABC):
 
         """
         return self.add(item,  inplace=True)
+
+    def __len__(self):
+        return len(self.items)
+
+    def to_json(self):
+        return [item.to_json() for item in self.items]
 
 
 class _BaseData(_Base):
@@ -371,6 +378,9 @@ class _BaseData(_Base):
         else:
             return self.__class__(self.text + text, tokenizer=self.tokenizer)
 
+    def to_json(self):
+        return {"text": self.text}
+
 
 class _BaseDataSet(_Base):
     """ Base Dataset class to manage data loading and batch iteration.
@@ -478,7 +488,7 @@ class _BaseDataSet(_Base):
 
         return self
 
-    def __next__(self) -> '_BaseData' | '_BaseDataSet':
+    def __next__(self) -> '_BaseDataSet':
         """ Retrieve the next batch of data and update progress.
 
         This method retrieves a batch of data from the items, advancing the
@@ -487,9 +497,8 @@ class _BaseDataSet(_Base):
 
         Returns
         -------
-        _BaseData or _BaseDataSet
-            The next batch of data from the items. If batch is 1 then return
-            `_BaseData` object, otherwise return `_BaseDataSet`.
+        _BaseDataSet
+            The next batch of data from the items.
 
         Raises
         ------
@@ -509,17 +518,13 @@ class _BaseDataSet(_Base):
 
         self.pbar.update(j - i)
 
-        if self.batch_size == 1:
-            return self.items[i]
-
-        else:
-            return self.__class__(
-                self.items[i: j],
-                batch_size=self.batch_size,
-                start=0,
-                end=None,
-                tokenizer=self.tokenizer,
-            )
+        return self.__class__(
+            self.items[i: j],
+            batch_size=self.batch_size,
+            start=0,
+            end=None,
+            tokenizer=self.tokenizer,
+        )
 
     def __getitem__(self, key) -> _BaseData:
         return self.items[key]
@@ -548,7 +553,11 @@ class _BaseDataSet(_Base):
             The portion of the items that has not yet been iterated.
 
         """
-        return self.items[self.i:]
+        return self.__class__(
+            self.items[self.i:],
+            batch_size=self.batch_size,
+            tokenizer=self.tokenizer,
+        )
 
     @classmethod
     def from_json(
