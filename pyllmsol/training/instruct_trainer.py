@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-12 16:27:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 10:41:08
+# @Last modified time: 2024-11-21 18:12:01
 
 """ Trainer objects for model with chat data template.
 
@@ -76,7 +76,6 @@ class TrainerInstruct(Trainer):
         token_size = input_ids.size(1)
         descr = f"{self.losses} - Token size = {token_size}"
         self.dataset.set_description(descr)
-        self.logger.info(descr)
 
         return input_ids, attention_mask
 
