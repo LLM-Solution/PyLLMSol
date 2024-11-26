@@ -29,6 +29,32 @@ pip install -r requirements.txt
 
 ## Structure
 
+```plaintext
+PyLLMSol/
+├── setup.py
+├── requirements.txt
+├── pyllmsol/
+│   └── argparser.py
+│   └── _base.py                 # Basis of training and inference modules
+│   ├── data/                    # Data module
+│   │   └── _base_data.py
+│   │   └── chat.py              # Chat objects with LLaMa-3.2 format
+│   │   └── prompt.py
+│   │   └── utils.py
+│   └── inference/               # Inference module
+│   │   └── _base_api.py
+│   │   └── _base_cli.py
+│   │   └── cli_instruct.py      # CLI with LLaMa-3.2 chat format
+│   └── training/                # Training module
+│   │   └── checkpoint.py
+│   │   └── instruct_trainer.py  # Trainer with LLaMa-3.2 chat format
+│   │   └── loss.py
+│   │   └── trainer.py
+│   │   └── utils.py
+│   └── test/
+└── README.md
+```
+
 ### 1. `training` Module
 
 The `training` module contains tools for managing training workflows and model checkpoints.
