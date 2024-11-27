@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:05
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 11:56:41
+# @Last modified time: 2024-11-27 09:29:29
 
 """ Base objects for text data to inferencing or training LLMs. """
 
@@ -28,7 +28,7 @@ __all__ = []
 TokenizerType = LlamaTokenizer | PreTrainedTokenizerBase
 
 
-class _Base(ABC):
+class _BaseData(ABC):
     """ Base class to handle initialization and processing of multiple item types.
 
     Parameters
@@ -160,7 +160,7 @@ class _Base(ABC):
 
     @abstractmethod
     def add(self, item: object, inplace: bool = False):
-        """ Add an object to _Base objects. """
+        """ Add an object to _BaseData objects. """
         pass
 
     def __add__(self, item: object):
@@ -178,7 +178,7 @@ class _Base(ABC):
 
         Returns
         -------
-        _Base or subclass instance
+        _BaseData or subclass instance
             A new instance containing the combined items of `self` and `item`.
 
         """
@@ -199,7 +199,7 @@ class _Base(ABC):
 
         Returns
         -------
-        _Base or subclass instance
+        _BaseData or subclass instance
             The modified instance with the added item, allowing for chainable
             operations with `+=`.
 
@@ -213,7 +213,7 @@ class _Base(ABC):
         return [item.to_json() for item in self.items]
 
 
-class _BaseData(_Base):
+class _TextData(_BaseData):
     """ A base class for handling and tokenizing text data.
 
     Parameters
@@ -276,11 +276,11 @@ class _BaseData(_Base):
         cls,
         path: Path,
         tokenizer: TokenizerType = None,
-    ) -> '_BaseData':
+    ) -> '_TextData':
         """ Create an instance object from a text file.
 
         This method reads text from a specified file and initializes a
-        `_BaseData` object with it. Optionally, a tokenizer can be provided to
+        `_TextData` object with it. Optionally, a tokenizer can be provided to
         process the text.
 
         Parameters
@@ -293,8 +293,8 @@ class _BaseData(_Base):
 
         Returns
         -------
-        _BaseData
-            A new instance of `_BaseData` containing the text from the specified
+        _TextData
+            A new instance of `_TextData` containing the text from the specified
             file.
 
         """
@@ -333,7 +333,7 @@ class _BaseData(_Base):
         """ Get number of caracters of text data. """
         return len(self.text)
 
-    def add(self, item: str | '_BaseData', inplace=False) -> '_BaseData':
+    def add(self, item: str | '_TextData', inplace=False) -> '_TextData':
         """ Add an text to the current text collection.
 
         This method adds an item to the existing list of items, either by
@@ -355,7 +355,7 @@ class _BaseData(_Base):
 
         Returns
         -------
-        _Base or subclass instance
+        _BaseData or subclass instance
             A new instance with combined items if `inplace=False`. If
             `inplace=True`, returns `self` after modification.
 
@@ -368,7 +368,7 @@ class _BaseData(_Base):
 
         else:
             raise TypeError(f"Unsupported type for addition: {type(item)}. "
-                            f"Expected 'str' or '_BaseData'.")
+                            f"Expected 'str' or '_TextData'.")
 
         if inplace:
             self.text += text
@@ -382,7 +382,7 @@ class _BaseData(_Base):
         return {"text": self.text}
 
 
-class _BaseDataSet(_Base):
+class _DataSet(_BaseData):
     """ Base Dataset class to manage data loading and batch iteration.
 
     This class allows for iterating through a dataset in customizable batch
@@ -392,7 +392,7 @@ class _BaseDataSet(_Base):
 
     Parameters
     ----------
-    items : list of _BaseData
+    items : list of _TextData
         The items to iterate over, typically loaded from JSON or JSONL.
     batch_size : int
         The size of each data batch, default is 1.
@@ -420,7 +420,7 @@ class _BaseDataSet(_Base):
 
     Attributes
     -----------
-    items : list of _BaseData
+    items : list of _TextData
         The data to iterate over.
     batch_size : int
         The number of items to return in each batch.
@@ -437,13 +437,13 @@ class _BaseDataSet(_Base):
 
     def __init__(
         self,
-        items: list[_BaseData | str],
+        items: list[_TextData | str],
         batch_size: int = 1,
         start: int = 0,
         end: int = None,
         tokenizer: TokenizerType = None,
     ):
-        super(_BaseDataSet, self).__init__(items, _BaseData, str, tokenizer)
+        super(_DataSet, self).__init__(items, _TextData, str, tokenizer)
         self.batch_size = batch_size
         self._set_boundary(start, end=end)
 
@@ -488,7 +488,7 @@ class _BaseDataSet(_Base):
 
         return self
 
-    def __next__(self) -> '_BaseDataSet':
+    def __next__(self) -> '_DataSet':
         """ Retrieve the next batch of data and update progress.
 
         This method retrieves a batch of data from the items, advancing the
@@ -497,7 +497,7 @@ class _BaseDataSet(_Base):
 
         Returns
         -------
-        _BaseDataSet
+        _DataSet
             The next batch of data from the items.
 
         Raises
@@ -526,7 +526,7 @@ class _BaseDataSet(_Base):
             tokenizer=self.tokenizer,
         )
 
-    def __getitem__(self, key) -> _BaseData:
+    def __getitem__(self, key) -> _TextData:
         return self.items[key]
 
     def set_description(self, text: str):
@@ -540,7 +540,7 @@ class _BaseDataSet(_Base):
         """
         self.pbar.set_description(text)
 
-    def remaining_data(self) -> list[_BaseData]:
+    def remaining_data(self) -> list[_TextData]:
         """ Return the data that has not yet been iterated.
 
         This method returns a list of data items from the current index `i` to
@@ -695,7 +695,7 @@ class _BaseDataSet(_Base):
 
         Returns
         -------
-        _Base or subclass instance
+        _BaseData or subclass instance
             A new instance with combined items if `inplace=False`. If
             `inplace=True`, returns `self` after modification.
 

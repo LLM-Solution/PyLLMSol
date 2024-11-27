@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 14:28:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 09:54:17
+# @Last modified time: 2024-11-27 10:33:56
 
 """ Test `data/chat.py` script. """
 
@@ -15,7 +15,7 @@ from llama_cpp import LlamaTokenizer
 import pytest
 
 # Local packages
-from pyllmsol.data.chat import DataSet, Chat, Message, ROLES, SEP
+from pyllmsol.data.chat import ChatDataSet, Chat, Message, ROLES, SEP
 
 __all__ = []
 
@@ -24,18 +24,12 @@ class MockTokenizer(LlamaTokenizer):
     def __init__(self):
         self.pad_token_id = 0
 
-    def __call__(self, text, add_special_tokens=False):
-        tokens = [0] if add_special_tokens else []
-        tokens += [i for i, _ in enumerate(text)]
-
-        return tokens
-
     def __bool__(self):
         return True
 
-    def encode(self, text, add_special_tokens=False):
-        tokens = [0] if add_special_tokens else []
-        tokens += [i for i, _ in enumerate(text.decode('utf-8'))]
+    def encode(self, text, add_bos=False, special=True):
+        tokens = [0] if add_bos else []
+        tokens += [i for i, _ in enumerate(text)]
 
         return tokens
 
@@ -66,11 +60,10 @@ def sample_dataset(mock_tokenizer):
         {"role": "assistant", "content": "How can I help?"},
     ]]
 
-    return DataSet(items=items, tokenizer=mock_tokenizer)
+    return ChatDataSet(items=items, tokenizer=mock_tokenizer)
 
 
 # Test Message object
-
 def test_valid_role_initialization(mock_tokenizer):
     # Test valid role initialization
     msg = Message(role="user", content="Hi!", tokenizer=mock_tokenizer)
@@ -218,11 +211,11 @@ def test_add_invalid_role_in_chat(sample_chat):
         sample_chat.add(invalid_message, inplace=True)
 
 
-# Test DataSet object
+# Test ChatDataSet object
 
 def test_dataset_initialization_with_chats(mock_tokenizer, sample_chat):
     # Test initialization with Chat objects
-    dataset = DataSet(items=[sample_chat], tokenizer=mock_tokenizer)
+    dataset = ChatDataSet(items=[sample_chat], tokenizer=mock_tokenizer)
     assert len(dataset.items) == 1
     assert isinstance(dataset.items[0], Chat)
 
@@ -230,7 +223,7 @@ def test_dataset_initialization_with_chats(mock_tokenizer, sample_chat):
 def test_dataset_initialization_with_message_lists(mock_tokenizer, sample_message):
     # Test initialization with lists of Message objects
     items = [[sample_message], [sample_message, sample_message]]
-    dataset = DataSet(items=items, tokenizer=mock_tokenizer)
+    dataset = ChatDataSet(items=items, tokenizer=mock_tokenizer)
     assert len(dataset.items) == 2
     assert isinstance(dataset.items[0], Chat)
 
@@ -245,14 +238,14 @@ def test_dataset_initialization_with_dict_lists(mock_tokenizer):
         ],
         [dict(role="user", content="Hello Wolrd!")]
     ]
-    dataset = DataSet(items=items, tokenizer=mock_tokenizer)
+    dataset = ChatDataSet(items=items, tokenizer=mock_tokenizer)
     assert len(dataset.items) == 2
     assert isinstance(dataset.items[0], Chat)
 
 
 def test_dataset_get_padded(sample_chat, mock_tokenizer):
     # Test get_padded method
-    dataset = DataSet(items=[sample_chat], tokenizer=mock_tokenizer)
+    dataset = ChatDataSet(items=[sample_chat], tokenizer=mock_tokenizer)
     tokens, mask = dataset.get_padded()
     assert len(tokens) == len(mask)
     assert len(tokens[0]) == len(mask[0])
@@ -261,12 +254,12 @@ def test_dataset_get_padded(sample_chat, mock_tokenizer):
 
 def test_dataset_iteration(sample_chat, mock_tokenizer):
     # Test iteration through the dataset
-    dataset = DataSet(items=[sample_chat] * 3, tokenizer=mock_tokenizer, batch_size=2)
+    dataset = ChatDataSet(items=[sample_chat] * 3, tokenizer=mock_tokenizer, batch_size=2)
     iter(dataset)
     batches = [next(dataset), next(dataset)]
     assert len(batches[0]) == 2
     assert len(batches[1]) == 1
-    assert isinstance(batches[0], DataSet)
+    assert isinstance(batches[0], ChatDataSet)
     assert len(batches[0].items) == 2
 
 
@@ -276,7 +269,7 @@ def test_dataset_from_json(mock_tokenizer, tmp_path):
     json_file = tmp_path / "data.json"
     json_file.write_text(json_data)
 
-    dataset = DataSet.from_json(path=json_file, tokenizer=mock_tokenizer)
+    dataset = ChatDataSet.from_json(path=json_file, tokenizer=mock_tokenizer)
     assert len(dataset.items) == 1
     assert isinstance(dataset.items[0], Chat)
 
@@ -288,14 +281,14 @@ def test_dataset_from_jsonl(mock_tokenizer, tmp_path):
     jsonl_file = tmp_path / "data.jsonl"
     jsonl_file.write_text(jsonl_data)
 
-    dataset = DataSet.from_jsonl(path=jsonl_file, tokenizer=mock_tokenizer)
+    dataset = ChatDataSet.from_jsonl(path=jsonl_file, tokenizer=mock_tokenizer)
     assert len(dataset.items) == 2
     assert isinstance(dataset.items[0], Chat)
 
 
 def test_dataset_add(sample_message, mock_tokenizer):
     # Test adding new items
-    dataset = DataSet(items=[], tokenizer=mock_tokenizer)
+    dataset = ChatDataSet(items=[], tokenizer=mock_tokenizer)
     dataset.add([sample_message], inplace=True)
     assert len(dataset.items) == 1
     assert isinstance(dataset[0], Chat)

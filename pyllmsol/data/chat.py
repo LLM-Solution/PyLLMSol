@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:28
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 11:24:35
+# @Last modified time: 2024-11-27 09:31:18
 
 """ Chat data objects for dialogue data to inferencing or training LLMs.
 
@@ -27,7 +27,7 @@ from torch import tensor
 from transformers import PreTrainedTokenizerBase
 
 # Local packages
-from pyllmsol.data._base_data import _Base, _BaseData, _BaseDataSet
+from pyllmsol.data._base_data import _BaseData, _TextData, _DataSet
 from pyllmsol.data.utils import truncate_text
 
 __all__ = []
@@ -55,7 +55,7 @@ REPR_ROLES = {
 REPR_SEP = ""
 
 
-class Message(_Base):
+class Message(_BaseData):
     """ Handles individual chat messages with specific roles and tokenization.
 
     This class formats and tokenizes chat messages for LLM inference or
@@ -274,7 +274,7 @@ class Message(_Base):
         return dict(role=self.role, content=self.content, **self.metadata)
 
 
-class Chat(_BaseData, _Base):
+class Chat(_TextData, _BaseData):
     """ Chat object that manages a sequence of messages within a conversation.
 
     The Chat class facilitates structured conversation data handling, providing
@@ -330,7 +330,7 @@ class Chat(_BaseData, _Base):
         items: list[dict[str, str] | Message],
         tokenizer: TokenizerType,
     ):
-        _Base.__init__(self, items, Message, dict, tokenizer)
+        _BaseData.__init__(self, items, Message, dict, tokenizer)
 
     def _process_item(self, item: object) -> object:
         """ Process an item into the expected type if necessary.
@@ -519,7 +519,7 @@ class Chat(_BaseData, _Base):
         """
         return self.add(message, inplace=True)
 
-    def add(self, item: '_BaseData' | 'Message' | dict, inplace: bool = False):
+    def add(self, item: '_TextData' | 'Message' | dict, inplace: bool = False):
         """ Add a new message or chat data to the conversation.
 
         This method adds an item to the chat. The item can be another `Chat`
@@ -621,12 +621,12 @@ class Chat(_BaseData, _Base):
         return self.append(new_message)
 
 
-class DataSet(_BaseDataSet, _Base):
+class ChatDataSet(_DataSet, _BaseData):
     """ A DataSet class for managing and processing a collection of chat data.
 
     The DataSet class provides utilities for loading, batching, padding, and
     tokenizing chat data. It is designed for use in training and inference
-    tasks with language models. This class extends `_BaseDataSet`, enabling
+    tasks with language models. This class extends `_DataSet`, enabling
     efficient data handling and iteration.
 
     Parameters
@@ -640,7 +640,8 @@ class DataSet(_BaseDataSet, _Base):
     tokenizer : TokenizerType
         Tokenizer object for processing text content in the dataset.
     batch_size : int, optional
-        The number of items to include in each batch during iteration (default is 1).
+        The number of items to include in each batch during iteration (default
+        is 1).
     start : int, optional
         The index to start iteration from (default is 0).
     end : int, optional
@@ -711,7 +712,7 @@ class DataSet(_BaseDataSet, _Base):
         start: int = 0,
         end: int = None,
     ):
-        _Base.__init__(self, items, Chat, list, tokenizer)
+        _BaseData.__init__(self, items, Chat, list, tokenizer)
         self.batch_size = batch_size
         self._set_boundary(start, end=end)
 
