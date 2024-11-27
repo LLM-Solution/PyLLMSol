@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-09 16:49:20
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 12:14:11
+# @Last modified time: 2024-11-27 16:15:32
 
 """ CLI object for instruct models. """
 
@@ -93,23 +93,29 @@ class InstructCLI(_BaseCommandLineInterface):
         )
         self.stop = "<|eot_id|>"
 
-    def answer(self, output: Generator[str, None, None]):
+    def answer(self, output: str | Generator[str, None, None]):
         """ Display the answer of the LLM.
 
         Parameters
         ----------
-        output : generator
+        output : str or generator
             Output of the LLM.
 
         """
         str_time = strftime("%H:%M:%S")
-        self._display(f"{str_time} | {self.ai_name}:", end="", flush=True)
-        answer = ""
-        for text in output:
-            answer += text
-            self._display(text, end='', flush=True)
+        self._output(f"{str_time} | {self.ai_name}:", end="", flush=True)
 
-        self._display("\n")
+        if isinstance(output, str):
+            answer = output
+            self._output(answer)
+
+        else:
+            answer = ""
+            for text in output:
+                answer += text
+                self._output(text, end='', flush=True)
+
+            self._output("\n")
 
         self.prompt_hist['assistant'] = answer
         self.logger.debug(f"ANSWER - {self.ai_name}: {answer}")
@@ -150,8 +156,17 @@ class InstructCLI(_BaseCommandLineInterface):
     def _check_prompt_limit_context(self):
         while self.prompt_hist.get_n_tokens() > self.n_ctx:
             # Remove the second first item of messages list
-            poped_prompt = self.prompt_hist.messages.pop(1)
-            self.logger.debug(f"Pop the following part: {poped_prompt}")
+            for i, message in enumerate(self.prompt_hist.items):
+                if message["role"] != "system":
+                    break
+
+            if self.prompt_hist.items[i]['role'] != "system":
+                poped_prompt = self.prompt_hist.items.pop(i)
+                self.logger.debug(f"Pop the following part: {poped_prompt}")
+
+            else:
+                self.logger.error("Only system messages are in chat")
+                break
 
 
 if __name__ == "__main__":

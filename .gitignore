@@ -4,6 +4,7 @@
 /__pycache__/
 
 # Ingnore files
+*.sublime-workspace
 
 # Ignore extensions
 *.pyc

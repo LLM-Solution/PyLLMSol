@@ -4,11 +4,12 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 11:36:18
+# @Last modified time: 2024-11-27 13:40:04
 
 """ Command Line Interface object for LLM. """
 
 # Built-in packages
+from copy import deepcopy
 from pathlib import Path
 from random import random
 from time import sleep, strftime
@@ -19,13 +20,18 @@ from llama_cpp import Llama
 
 # Local packages
 from pyllmsol._base import _Base
-from pyllmsol.data.prompt import Prompt
+from pyllmsol.data._base_data import _TextData
 
 __all__ = []
 
 
 class _BaseCommandLineInterface(_Base):
-    """ Command line interface object to chat with the LLM.
+    """ Command Line Interface for interacting with a Large Language Model.
+
+    This class provides an interface for engaging in conversations with an LLM
+    via a command line. It supports features like token streaming, history
+    management, and dynamic initialization with custom prompts or LoRA (Low-Rank
+    Adaptation) weights.
 
     Parameters
     ----------
@@ -58,9 +64,9 @@ class _BaseCommandLineInterface(_Base):
     ----------
     ai_name, user_name : str
         Respectively the name of AI and of the user.
-    llm : object
+    llm : llama_cpp.Llama
         Large language model.
-    prompt : str
+    prompt_hist : pyllmsol.data._base_data._TextData
         Prompt to feed the model. The prompt will be increment with all the
         conversation, except if you call the `reset_prompt` method.
     stop : list of str
@@ -72,16 +78,16 @@ class _BaseCommandLineInterface(_Base):
 
     """
 
-    PromptFactory = Prompt
+    PromptFactory = _TextData
 
     def __init__(
         self,
         model_path: Path | str,
         lora_path: Path | str = None,
-        init_prompt: str | Prompt = None,
+        init_prompt: str | _TextData = None,
         verbose: bool = False,
         n_ctx: int = 32768,
-        n_threads=6,
+        n_threads: int = 6,
         **kwargs,
     ):
         # Set LLM model
@@ -111,24 +117,41 @@ class _BaseCommandLineInterface(_Base):
 
         self.today = strftime("%B %d, %Y")
         self.user_name = "User"
-        self.ai_name = "MiniChatBot"
+        self.ai_name = "Assistant"
         self.stop = [f"\n{self.user_name}:", f"\n{self.ai_name}:"]
         self.logger.debug(f"user_name={self.user_name}&ai_name={self.ai_name}")
 
         self.reset_prompt()
 
-    def set_init_prompt(self, prompt):
+    def set_init_prompt(self, prompt: str | _TextData):
+        """ Initialize or update the starting prompt for the LLM.
+
+        Parameters
+        ----------
+        prompt : str or _TextData
+            The initial prompt as a string or a `_TextData` object.
+
+        """
         if isinstance(prompt, str):
-            self.init_prompt = self.PromptFactory(prompt)
+            self.init_prompt = self.PromptFactory(
+                prompt,
+                tokenizer=self.llm.tokenize,
+            )
 
         else:
             self.init_prompt = prompt
 
-        self.init_prompt.set_tokenizer(self.llm.tokenize)
+    def run(self, stream: bool = True, ):
+        """ Start the command line interface for the AI chatbot.
 
-    def run(self):
-        """ Start the command line interface for the AI chatbot. """
-        self._display(f"\n\nWelcome, I am {self.ai_name} your custom AI, "
+        Parameters
+        ----------
+        stream : bool, optional
+            Stream the answer if `True` (default), otherwise wait the end of the
+            generation to print the output.
+
+        """
+        self._output(f"\n\nWelcome, I am {self.ai_name} your custom AI, "
                       f"you can ask me anything about LLM Solution.\nPress "
                       f"`ctrl + C` or write 'exit' to exit\n\n")
 
@@ -137,14 +160,14 @@ class _BaseCommandLineInterface(_Base):
 
         try:
             str_time = strftime("%H:%M:%S")
-            question = input(f"{str_time} | {self.user_name}: ")
+            question = self._input(f"{str_time} | {self.user_name}: ")
 
             while question.lower() != "exit":
-                output = self.ask(question, stream=True)
+                output = self.ask(question, stream=stream)
                 self.answer(output)
 
                 str_time = strftime("%H:%M:%S")
-                question = input(f"{str_time} | {self.user_name}: ")
+                question = self._input(f"{str_time} | {self.user_name}: ")
 
         except Exception as e:
             self.exit(f"\n\nAN ERROR OCCURS.\n\n{type(e)}: {e}")
@@ -152,26 +175,32 @@ class _BaseCommandLineInterface(_Base):
         self.exit(f"Goodbye {self.user_name} ! I hope to see you "
                   f"soon !\n")
 
-    def answer(self, output: Generator[str, None, None]):
+    def answer(self, output: str | Generator[str, None, None]):
         """ Display the answer of the LLM.
 
         Parameters
         ----------
-        output : generator
+        output : str or generator
             Output of the LLM.
 
         """
         str_time = strftime("%H:%M:%S")
-        self._display(f"{str_time} | {self.ai_name}:", end="", flush=True)
-        answer = ""
-        for text in output:
-            answer += text
-            self._display(text, end='', flush=True)
+        self._output(f"{str_time} | {self.ai_name}:", end="", flush=True)
 
-        self._display("\n")
+        if isinstance(output, str):
+            answer = output
+            self._output(answer)
+
+        else:
+            answer = ""
+            for text in output:
+                answer += text
+                self._output(text, end='', flush=True)
+
+            self._output("\n")
 
         self.prompt_hist += f"{answer}"
-        self.logger.debug(f"ANSWER - {self.ai_name}: {Prompt(answer)}")
+        self.logger.debug(f"ANSWER - {self.ai_name}: {_TextData(answer)}")
 
 
     def ask(
@@ -212,15 +241,15 @@ class _BaseCommandLineInterface(_Base):
 
     def __call__(
         self,
-        prompt: str | Prompt,
+        prompt: str | _TextData,
         stream: bool = False,
-        max_tokens=None,
+        max_tokens: int = None,
     ) -> str | Generator[str, None, None]:
         """ Generate an answer by the LLM for a given raw prompt.
 
         Parameters
         ----------
-        prompt : str or Prompt object
+        prompt : str or _TextData object
             Raw prompt to feed the LLM.
         stream : bool, optional
             If false (default) the full answer is waited before to be printed,
@@ -268,18 +297,27 @@ class _BaseCommandLineInterface(_Base):
     def _get_n_token(self, sentence: str) -> int:
         return len(self.llm.tokenize(sentence.encode('utf-8')))
 
-    def exit(self, txt: str = None):
+    def exit(self, txt: str = None, stream: bool = False):
         """ Exit the CLI of the chatbot.
 
         Parameters
         ----------
         txt : str, optional
             Text to display before exiting.
+        stream : bool, optional
+            Stream the exit message otherwise print the entire message in once
+            (default).
 
         """
         if txt is not None:
-            self._display(f"{self.ai_name}: ")
-            self._stream(txt)
+
+            txt = f"{self.ai_name}: {txt}"
+
+            if stream:
+                self._stream(txt)
+
+            else:
+                self._output(txt)
 
         if self.verbose:
             self.logger.info(f"The full prompt is:\n\n{str(self.prompt_hist)}\n"
@@ -292,21 +330,27 @@ class _BaseCommandLineInterface(_Base):
         self.logger.debug("Reset prompt:\n" + repr(self.init_prompt))
 
         if self.init_prompt:
-            self.prompt_hist = self.init_prompt
+            self.prompt_hist = deepcopy(self.init_prompt)
 
         else:
-            self.prompt_hist = self.PromptFactory("")
+            self.prompt_hist = self.PromptFactory(
+                "",
+                tokenizer=self.llm.tokenize,
+            )
 
         self.logger.debug("Loading initial prompt")
         r = self(self.prompt_hist, stream=False, max_tokens=1)
 
     def _stream(self, txt: str):
         for chars in txt:
-            self._display(chars)
-            sleep(random() / 20)
+            self._output(chars)
+            sleep(random() / 10)
 
-    def _display(self, txt: str, end: str = "", flush: bool = True):
+    def _output(self, txt: str, end: str = "", flush: bool = True):
         print(txt, end=end, flush=flush)
+
+    def _input(self, prompt: str) -> str:
+        return input(prompt)
 
 
 if __name__ == "__main__":

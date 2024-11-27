@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:28
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-27 09:31:18
+# @Last modified time: 2024-11-27 13:59:35
 
 """ Chat data objects for dialogue data to inferencing or training LLMs.
 
@@ -618,7 +618,8 @@ class Chat(_TextData, _BaseData):
 
         new_message = Message(role=role, content='', tokenizer=self.tokenizer)
 
-        return self.append(new_message)
+        # return self.append(new_message)
+        return self.add(new_message, inplace=False)
 
 
 class ChatDataSet(_DataSet, _BaseData):
