@@ -4,36 +4,25 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-27 11:52:04
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-27 16:18:34
+# @Last modified time: 2024-11-28 16:30:51
+# @File path: ./pyllmsol/tests/inference/test_cli_instruct.py
+# @Project: PyLLMSol
 
 """ Test `pyllmsol.inference.cli_instruct.py` script. """
 
 # Built-in packages
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 # Third party packages
-from llama_cpp import LlamaTokenizer
 import pytest
 
 # Local packages
+from pyllmsol.mock import MockLlama, MockTokenizer
 from pyllmsol.inference.cli_instruct import InstructCLI
 from pyllmsol.data.chat import Chat, Message
 
+
 __all__ = []
-
-
-class MockTokenizer(LlamaTokenizer):
-    def __init__(self):
-        self.pad_token_id = 0
-
-    def __bool__(self):
-        return True
-
-    def encode(self, text, add_bos=False, special=True):
-        tokens = [0] if add_bos else []
-        tokens += [ord(char) for char in text]  # Simulate token IDs
-
-        return tokens
 
 
 @pytest.fixture
@@ -48,16 +37,9 @@ def chat():
 
 
 @pytest.fixture
-@patch('pyllmsol.inference._base_cli.Llama')
-def cli(mock_llama, chat):
-    mock_llama_instance = MagicMock()
-    mock_llama.return_value = mock_llama_instance
-
-    # Attach the MockTokenizer to the mock_llama_instance
-    mock_llama_instance.tokenize = MockTokenizer()
-
+def cli(chat):
     return InstructCLI(
-        model_path="dummy/path/to/model",
+        llm=MockLlama(),
         init_prompt=chat,
         verbose=True,
     )
@@ -68,6 +50,7 @@ def test_initialization(cli, chat):
     assert cli.stop == "<|eot_id|>"
     assert cli.init_prompt == chat
     assert isinstance(cli.init_prompt, Chat)
+    assert isinstance(cli.prompt_hist, Chat)
     assert cli.init_prompt.items[0].role == "system"
     assert cli.init_prompt.items[0].content == "Welcome to the chat."
     assert len(cli.prompt_hist.items) == 2
@@ -90,7 +73,7 @@ def test_context_limit(cli, chat):
     """Test context limit enforcement in _check_prompt_limit_context."""
     print("Prompt 0", str(cli.prompt_hist))
     print("Prompt 0", len(str(cli.prompt_hist)))
-    cli.n_ctx = 240
+    cli.llm.n_ctx = 240
     cli.prompt_hist.add({"role": "user", "content": "A short question."}, inplace=True)
     cli.prompt_hist.add({"role": "assistant", "content": "A short answer."}, inplace=True)
     print("Prompt 1", str(cli.prompt_hist))

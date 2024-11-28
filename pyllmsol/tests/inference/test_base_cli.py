@@ -4,52 +4,31 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-26 17:39:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-27 11:45:48
+# @Last modified time: 2024-11-28 16:30:42
+# @File path: ./pyllmsol/tests/inference/test_base_cli.py
+# @Project: PyLLMSol
 
 """ Test base CLI object. """
 
 # Built-in packages
-from pathlib import Path
-import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 # Third party packages
-from llama_cpp import LlamaTokenizer
 import pytest
 
 # Local packages
+from pyllmsol.mock import MockLlama
+from pyllmsol.data._base_data import _TextData
 from pyllmsol.inference._base_cli import _BaseCommandLineInterface
 
 
 __all__ = []
 
 
-class MockTokenizer(LlamaTokenizer):
-    def __init__(self):
-        self.pad_token_id = 0
-
-    def __bool__(self):
-        return True
-
-    def encode(self, text, add_bos=False, special=True):
-        tokens = [0] if add_bos else []
-        tokens += [ord(char) for char in text]  # Simulate token IDs
-
-        return tokens
-
-
 @pytest.fixture
-@patch('pyllmsol.inference._base_cli.Llama')
-def cli(mock_llama):
-    mock_llama_instance = MagicMock()
-    mock_llama.return_value = mock_llama_instance
-
-    # Attach the MockTokenizer to the mock_llama_instance
-    mock_llama_instance.tokenize = MockTokenizer()
-
+def cli():
     return _BaseCommandLineInterface(
-        model_path="dummy/path/to/model",
-        lora_path="dummy/path/to/lora",
+        llm=MockLlama(),
         init_prompt="Hello!",
         verbose=True
     )
@@ -61,6 +40,8 @@ def test_initialization(cli):
     assert cli.user_name == "User"
     assert cli.llm is not None
     assert cli.stop == [f"\n{cli.user_name}:", f"\n{cli.ai_name}:"]
+    assert isinstance(cli.init_prompt, _TextData)
+    assert isinstance(cli.prompt_hist, _TextData)
 
 
 @patch('pyllmsol.inference._base_cli.print')
