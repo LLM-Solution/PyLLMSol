@@ -4,9 +4,17 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 08:59:41
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-09 10:57:05
+# @Last modified time: 2024-11-28 16:45:12
+# @File path: ./pyllmsol/inference/_base_api.py
+# @Project: PyLLMSol
 
-""" Description. """
+""" Base API object for serving an LLM chatbot via Flask.
+
+This module defines an API class for deploying a Flask-based server to  interact
+with a Large Language Model (LLM). It includes multiple routes for querying the
+LLM, resetting or modifying the prompt, and managing the server lifecycle.
+
+"""
 
 # Built-in packages
 from pathlib import Path
@@ -23,20 +31,25 @@ __all__ = []
 
 
 class API(_Base):
-    """ Flask API object to run a LLM chatbot.
+    """ Flask API for interacting with an LLM chatbot.
+
+    This class implements a Flask server to expose a chatbot interface for a
+    Large Language Model (LLM). It supports setting and modifying prompts,
+    processing user queries, and managing server health and shutdown.
 
     Parameters
     ----------
-    model_path : str
-        Path of the model to load (must be GGUF format).
+    model_path : str or Path
+        Path to the LLM model weights (GGUF format required).
     init_prompt : str
-        Initial prompt to feed the LLM in the CLI.
-    lora_path : str, optional
-        Path of LoRA weights to load.
+        Initial prompt to feed the LLM.
+    lora_path : str or Path, optional
+        Path to LoRA weights. Default is None.
     n_ctx : int, optional
-        Max number of tokens in the prompt, default is 32768.
+        Maximum number of tokens in the prompt context window. Default is 32768.
     debug : bool, optional
-        Debug mode for flask API, default is False.
+        If True, enables debug mode for Flask and allows multiple servers to run
+        simultaneously. Default is False.
 
     Methods
     -------
@@ -48,18 +61,19 @@ class API(_Base):
     Attributes
     ----------
     app : Flask
-       Flask application.
+        The Flask application instance.
     cli : CommandLineInterface
-       Chatbot object.
-    debug : bool, optional
-        If True then don't block app if lock_file already exist. It means
-        several servers can run simultanously.
+        An instance of the chatbot interface for interacting with the LLM.
+    debug : bool
+        Indicates whether the API is running in debug mode.
     init_prompt : str
-        Initial prompt to feed the LLM in the CLI.
+        Initial prompt fed to the LLM.
+    lock_file : Path
+        File used to prevent multiple servers from running concurrently.
 
     Notes
     -----
-    API Routes:
+    API Endpoints:
 
     - **POST** `/shutdown`
         - Description: Shuts down the Flask API server.
@@ -126,7 +140,7 @@ class API(_Base):
 
         # Set CLI object
         lora_path = str(lora_path) if lora_path else None
-        self.cli = _BaseCommandLineInterface(
+        self.cli = _BaseCommandLineInterface.from_path(
             model_path,
             lora_path=lora_path,
             init_prompt=self.init_prompt,
@@ -142,7 +156,14 @@ class API(_Base):
         self.logger.debug("Flask API object is initiated")
 
     def add_route(self):
-        """ Add classical routes. """
+        """ Add standard API routes to the Flask application.
+
+        Routes added:
+        - `/shutdown` (POST): Shut down the server.
+        - `/health` (GET): Check server health.
+        - `/ping` (GET): Ping the server to ensure it's running.
+
+        """
         @self.app.route("/shutdown", methods=["POST"])
         def shutdown():
             """ Shutdown flask API server.
@@ -193,7 +214,13 @@ class API(_Base):
             return 'pong'
 
     def add_get_cli_route(self):
-        """ Add GET routes to communicate with the CLI. """
+        """ Add GET routes for interacting with the LLM through the CLI.
+
+        Routes added:
+        - `/reset_prompt` (GET): Reset the LLM's prompt history.
+        - `/get_prompt` (GET): Retrieve the current LLM prompt history.
+
+        """
         @self.app.route("/reset_prompt", methods=['GET'])
         def reset_prompt():
             """ Reset the prompt of the LLM.
@@ -235,7 +262,14 @@ class API(_Base):
             return prompt
 
     def add_post_cli_route(self):
-        """ Add POST routes to communicate with the CLI. """
+        """ Add POST routes for interacting with the LLM through the CLI.
+
+        Routes added:
+        - `/set_init_prompt` (POST): Set a new initial prompt.
+        - `/ask` (POST): Submit a user query to the LLM.
+        - `/call` (POST): Submit a raw prompt to the LLM.
+
+        """
         @self.app.route("/set_init_prompt", methods=['POST'])
         def set_init_prompt():
             """ Set the prompt to the LLM.
@@ -340,17 +374,21 @@ class API(_Base):
             else:
                 return answer
 
-    def run(self, timer=0, **kwargs):
-        """ Start to run the flask API.
+    def run(self, timer: int = 0, **kwargs):
+        """ Start the Flask API server.
 
         Parameters
         ----------
         timer : int, optional
-            A timer in secondes to shutdown the flask app, default is 0 (never
-            shutdown).
-        **kwargs
-            Keywords arguments for `flask.Flask.run` method, cf flask
-            documentation.
+            Time (in seconds) after which the server shuts down automatically.
+            Default is 0 (never shuts down).
+        **kwargs : dict
+            Additional arguments passed to `Flask.run`.
+
+        Notes
+        -----
+        If `timer > 0`, the server runs in a separate thread and shuts down 
+        after the specified duration.
 
         """
         if timer > 0:
@@ -380,6 +418,16 @@ class API(_Base):
         exit(0)
 
     def __enter__(self):
+        """ Set up the API server context.
+
+        Creating a lock file to prevent duplicates.
+
+        Returns
+        -------
+        API
+            The API instance, ready to be used in a `with` statement.
+
+        """
         self.logger.debug("Enter in control manager")
         # Lock file to block an other app to run
         self.lock_file.touch(exist_ok=self.debug)
@@ -387,6 +435,23 @@ class API(_Base):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        """ Clean up the API server context, removing the lock file.
+
+        Parameters
+        ----------
+        exc_type : type
+            The exception type if an exception occurred.
+        exc_value : Exception
+            The exception instance if an exception occurred.
+        traceback : traceback
+            The traceback object if an exception occurred.
+
+        Returns
+        -------
+        bool
+            False to propagate exceptions, True to suppress them.
+
+        """
         # Unlock file
         self.lock_file.unlink(missing_ok=self.debug)
         self.logger.debug("Exit of control manager")

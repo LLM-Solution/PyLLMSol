@@ -4,9 +4,22 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-09 16:49:20
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-27 16:15:32
+# @Last modified time: 2024-11-28 16:27:49
+# @File path: ./pyllmsol/inference/cli_instruct.py
+# @Project: PyLLMSol
 
-""" CLI object for instruct models. """
+""" Command Line Interface for instruct-based models.
+
+This module defines a subclass of `_BaseCommandLineInterface` designed to
+interact with LLMs using instruction-based chat formats. It implements the
+`LLaMa 3.2` chat template [1]_, supporting structured message formats like roles
+(`user`, `assistant`, `system`) and token-based context management.
+
+References
+----------
+.. [1] https://www.llama.com/docs/model-cards-and-prompt-formats/llama3_1/
+
+"""
 
 # Built-in packages
 from pathlib import Path
@@ -14,6 +27,7 @@ from time import strftime
 from typing import Generator
 
 # Third party packages
+from llama_cpp import Llama
 
 # Local packages
 from pyllmsol.inference._base_cli import _BaseCommandLineInterface
@@ -23,24 +37,21 @@ __all__ = []
 
 
 class InstructCLI(_BaseCommandLineInterface):
-    """ Command line interface object to chat with the LLM.
+    """ Command Line Interface for instruction-based LLM interactions.
+
+    This class provides a CLI for interacting with instruction-based LLMs,
+    following the `LLaMa 3.2` chat template [1]_. It manages role-specific
+    messages, ensures context window constraints, and supports real-time
+    response streaming.
 
     Parameters
     ----------
-    model_path : Path or str
-        Path to load weight of the model.
-    lora_path : Path or str, optional
-        Path to load LoRA weights.
+    llm : Llama
+        LLM object from `llama_cpp` library.
     init_prompt : str, optional
         Initial prompt to feed the LLM.
     verbose : bool, optional
         If True then LLM is run with verbosity. Default is False.
-    n_ctx : int, optional
-        Maximum number of input tokens for LLM, default is 32 768.
-    n_threads : int, optional
-        Number of threads to compute the inference.
-    **kwargs
-        Keyword arguments for llama_cpp.Llama object, cf documentation.
 
     Methods
     -------
@@ -58,15 +69,20 @@ class InstructCLI(_BaseCommandLineInterface):
         Respectively the name of AI and of the user.
     llm : object
         Large language model.
-    prompt : str
-        Prompt to feed the model. The prompt will be increment with all the
-        conversation, except if you call the `reset_prompt` method.
+    init_prompt : Chat
+        Initial prompt to start the conversation.
+    prompt_hist : Chat
+        History of the conversation, managed as role-based messages.
     stop : list of str
         List of paterns to stop the text generation of the LLM.
     today : str
-        Date of today.
+        Current date in "Month Day, Year" format.
     verbose : bool
-        Verbosity.
+        Indicates whether verbose mode is enabled.
+
+    References
+    ----------
+    .. [1] https://www.llama.com/docs/model-cards-and-prompt-formats/llama3_1/
 
     """
 
@@ -74,32 +90,24 @@ class InstructCLI(_BaseCommandLineInterface):
 
     def __init__(
         self,
-        model_path: Path | str,
-        lora_path: Path | str = None,
+        llm: Llama,
         init_prompt: str | Chat = None,
         verbose: bool = False,
-        n_ctx: int = 32768,
-        n_threads=4,
-        **kwargs,
     ):
         super(InstructCLI, self).__init__(
-            model_path=model_path,
-            lora_path=lora_path,
+            llm,
             init_prompt=init_prompt,
             verbose=verbose,
-            n_ctx=n_ctx,
-            n_threads=n_threads,
-            **kwargs,
         )
         self.stop = "<|eot_id|>"
 
     def answer(self, output: str | Generator[str, None, None]):
-        """ Display the answer of the LLM.
+        """ Display the answer of the LLM to the user.
 
         Parameters
         ----------
         output : str or generator
-            Output of the LLM.
+            The generated output of the LLM.
 
         """
         str_time = strftime("%H:%M:%S")
@@ -125,15 +133,14 @@ class InstructCLI(_BaseCommandLineInterface):
         question: str,
         stream: bool = False
     ) -> str | Generator[str, None, None]:
-        """ Ask a question to the LLM.
+        """ Submit a question to the LLM and retrieve its response.
 
         Parameters
         ----------
         question : str
             Question asked by the user to the LLM.
         stream : bool, optional
-            If false (default) the full answer is waited before to be printed,
-            otherwise the answer is streamed.
+            If True, streams the response as it is generated. Default is False.
 
         Returns
         -------
@@ -154,7 +161,13 @@ class InstructCLI(_BaseCommandLineInterface):
         return self(self.prompt_hist['assistant'], stream=stream)
 
     def _check_prompt_limit_context(self):
-        while self.prompt_hist.get_n_tokens() > self.n_ctx:
+        """ Ensure the conversation history remains within the token limit.
+
+        This method removes the oldest non-system messages from the history if
+        the total number of tokens exceeds the context window (`llm.n_ctx`).
+
+        """
+        while self.prompt_hist.get_n_tokens() > self.llm.n_ctx:
             # Remove the second first item of messages list
             for i, message in enumerate(self.prompt_hist.items):
                 if message["role"] != "system":
@@ -165,7 +178,8 @@ class InstructCLI(_BaseCommandLineInterface):
                 self.logger.debug(f"Pop the following part: {poped_prompt}")
 
             else:
-                self.logger.error("Only system messages are in chat")
+                self.logger.error("Prompt exceed limit but only messages from "
+                                  "'system' in history")
                 break
 
 

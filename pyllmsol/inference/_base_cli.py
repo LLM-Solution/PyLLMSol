@@ -4,9 +4,18 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-27 13:40:04
+# @Last modified time: 2024-11-28 16:13:59
+# @File path: ./pyllmsol/inference/_base_cli.py
+# @Project: PyLLMSol
 
-""" Command Line Interface object for LLM. """
+""" Basis Command Line Interface object for interacting with an LLM.
+
+This module defines a base Command Line Interface (CLI) class to interact with 
+a Large Language Model (LLM). It supports features such as token streaming, 
+conversation history management, and customizable initialization options, 
+enabling efficient and user-friendly interactions through the terminal.
+
+"""
 
 # Built-in packages
 from copy import deepcopy
@@ -35,23 +44,16 @@ class _BaseCommandLineInterface(_Base):
 
     Parameters
     ----------
-    model_path : Path or str
-        Path to load weight of the model.
-    lora_path : Path or str, optional
-        Path to load LoRA weights.
+    llm : Llama
+        LLM object.
     init_prompt : str, optional
         Initial prompt to feed the LLM.
     verbose : bool, optional
         If True then LLM is run with verbosity. Default is False.
-    n_ctx : int, optional
-        Maximum number of input tokens for LLM, default is 32 768.
-    n_threads : int, optional
-        Number of threads to compute the inference.
-    **kwargs
-        Keyword arguments for llama_cpp.Llama object, cf documentation.
 
     Methods
     -------
+    from_path
     __call__
     answer
     ask
@@ -66,15 +68,17 @@ class _BaseCommandLineInterface(_Base):
         Respectively the name of AI and of the user.
     llm : llama_cpp.Llama
         Large language model.
-    prompt_hist : pyllmsol.data._base_data._TextData
+    init_prompt : _TextData
+        Initial prompt to start the conversation.
+    prompt_hist : _TextData
         Prompt to feed the model. The prompt will be increment with all the
         conversation, except if you call the `reset_prompt` method.
     stop : list of str
         List of paterns to stop the text generation of the LLM.
     today : str
-        Date of today.
+        Current date in "Month Day, Year" format.
     verbose : bool
-        Verbosity.
+        Indicates whether verbose mode is enabled.
 
     """
 
@@ -82,38 +86,22 @@ class _BaseCommandLineInterface(_Base):
 
     def __init__(
         self,
-        model_path: Path | str,
-        lora_path: Path | str = None,
+        llm: Llama,
         init_prompt: str | _TextData = None,
         verbose: bool = False,
-        n_ctx: int = 32768,
-        n_threads: int = 6,
-        **kwargs,
     ):
         # Set LLM model
-        self.llm = Llama(
-            model_path=str(model_path),
-            n_ctx=n_ctx,
-            verbose=False,
-            n_threads=n_threads,
-            lora_path=lora_path,
-            **kwargs,
-        )
+        self.llm = llm
 
         self.set_init_prompt(init_prompt)
 
         super(_BaseCommandLineInterface, self).__init__(
             logger=True,
-            model_path=model_path,
-            lora_path=lora_path,
+            llm=self.llm,
             init_prompt=self.init_prompt,
             verbose=verbose,
-            n_ctx=n_ctx,
-            n_threads=n_threads,
-            **kwargs,
         )
         self.verbose = verbose
-        self.n_ctx = n_ctx
 
         self.today = strftime("%B %d, %Y")
         self.user_name = "User"
@@ -122,6 +110,50 @@ class _BaseCommandLineInterface(_Base):
         self.logger.debug(f"user_name={self.user_name}&ai_name={self.ai_name}")
 
         self.reset_prompt()
+
+    @classmethod
+    def from_path(
+        cls,
+        model_path: Path | str,
+        lora_path: Path | str = None,
+        init_prompt: str | _TextData = None,
+        verbose: bool = False,
+        n_ctx: int = 32768,
+        n_threads: int = 6,
+        **kwargs,
+    ):
+        """ Instanciate CLI object with Large Language Model loaded from path.
+
+        Parameters
+        ----------
+        model_path : Path or str
+            Path to load weight of the model.
+        lora_path : Path or str, optional
+            Path to load LoRA weights.
+        n_ctx : int, optional
+            Maximum number of input tokens for LLM, default is 32 768.
+        n_threads : int, optional
+            Number of threads to compute the inference.
+        **kwargs
+            Additional arguments passed to the `llama_cpp.Llama` object [1]_.
+
+        References
+        ----------
+        .. [1] https://llama-cpp-python.readthedocs.io/en/latest/api-reference/
+
+        """
+        # Set LLM model
+        llm = Llama(
+            model_path=str(model_path),
+            n_ctx=n_ctx,
+            verbose=False,
+            n_threads=n_threads,
+            lora_path=lora_path,
+            **kwargs,
+        )
+
+        return cls(llm, init_prompt=init_prompt, verbose=verbose)
+
 
     def set_init_prompt(self, prompt: str | _TextData):
         """ Initialize or update the starting prompt for the LLM.
@@ -141,14 +173,14 @@ class _BaseCommandLineInterface(_Base):
         else:
             self.init_prompt = prompt
 
-    def run(self, stream: bool = True, ):
-        """ Start the command line interface for the AI chatbot.
+    def run(self, stream: bool = True):
+        """ Start the command line interface for interacting with the chatbot.
 
         Parameters
         ----------
         stream : bool, optional
-            Stream the answer if `True` (default), otherwise wait the end of the
-            generation to print the output.
+            If True (default), streams the LLM's response as it is generated. 
+            If False, waits for the complete response before displaying it.
 
         """
         self._output(f"\n\nWelcome, I am {self.ai_name} your custom AI, "
@@ -176,12 +208,12 @@ class _BaseCommandLineInterface(_Base):
                   f"soon !\n")
 
     def answer(self, output: str | Generator[str, None, None]):
-        """ Display the answer of the LLM.
+        """ Display the answer of the LLM to the user.
 
         Parameters
         ----------
         output : str or generator
-            Output of the LLM.
+            The generated output of the LLM.
 
         """
         str_time = strftime("%H:%M:%S")
@@ -208,15 +240,14 @@ class _BaseCommandLineInterface(_Base):
         question: str,
         stream: bool = False
     ) -> str | Generator[str, None, None]:
-        """ Ask a question to the LLM.
+        """ Submit a question to the LLM and retrieve its response.
 
         Parameters
         ----------
         question : str
             Question asked by the user to the LLM.
         stream : bool, optional
-            If false (default) the full answer is waited before to be printed,
-            otherwise the answer is streamed.
+            If True, streams the response as it is generated. Default is False.
 
         Returns
         -------
@@ -245,21 +276,22 @@ class _BaseCommandLineInterface(_Base):
         stream: bool = False,
         max_tokens: int = None,
     ) -> str | Generator[str, None, None]:
-        """ Generate an answer by the LLM for a given raw prompt.
+        """ Generate a response from the LLM for a given prompt.
 
         Parameters
         ----------
-        prompt : str or _TextData object
-            Raw prompt to feed the LLM.
+        prompt : str or _TextData
+            The input prompt for the LLM.
         stream : bool, optional
-            If false (default) the full answer is waited before to be printed,
-            otherwise the answer is streamed.
+            If True, streams the response as it is generated. Default is False.
+        max_tokens : int, optional
+            The maximum number of tokens to generate in the response.
 
         Returns
         -------
         str or Generator of str
-            The output of the LLM, if `stream` is `True` then return generator
-            otherwise return a string.
+            The generated response from the LLM. If `stream` is True, returns a
+            generator.
 
         """
         self.logger.debug(f"CALL - {prompt}")
@@ -288,7 +320,8 @@ class _BaseCommandLineInterface(_Base):
         # FIXME : How deal with too large prompt such that all the
         #         conversation is removed ?
         #         Currently not working
-        while self._get_n_token(str(self.prompt_hist)) > self.n_ctx:
+        raise NotImplementedError
+        while self._get_n_token(str(self.prompt_hist)) > self.llm.n_ctx:
             chunked_prompt = str(self.prompt_hist).split("\n")
             poped_prompt = chunked_prompt.pop(1)
             self.logger.debug(f"Pop the following part: {poped_prompt}")
@@ -298,15 +331,15 @@ class _BaseCommandLineInterface(_Base):
         return len(self.llm.tokenize(sentence.encode('utf-8')))
 
     def exit(self, txt: str = None, stream: bool = False):
-        """ Exit the CLI of the chatbot.
+        """ Terminate the CLI session and display an exit message.
 
         Parameters
         ----------
         txt : str, optional
-            Text to display before exiting.
+            Message to display before exiting. Default is None.
         stream : bool, optional
-            Stream the exit message otherwise print the entire message in once
-            (default).
+            If `True`, streams the exit message character by character. Default
+            is `False`.
 
         """
         if txt is not None:
@@ -326,7 +359,7 @@ class _BaseCommandLineInterface(_Base):
         self.logger.debug("<Exit>")
 
     def reset_prompt(self):
-        """ Reset the current prompt history with the `init_prompt`. """
+        """ Reset the current prompt history with `self.init_prompt`. """
         self.logger.debug("Reset prompt:\n" + repr(self.init_prompt))
 
         if self.init_prompt:
