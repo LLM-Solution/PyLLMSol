@@ -5,6 +5,7 @@
 
 # Ingnore files
 *.sublime-workspace
+_old_*
 
 # Ignore extensions
 *.pyc

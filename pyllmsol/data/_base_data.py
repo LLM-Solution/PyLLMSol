@@ -4,7 +4,9 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:05
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-27 09:29:29
+# @Last modified time: 2024-11-28 09:12:28
+# @File path: ./pyllmsol/data/_base_data.py
+# @Project: PyLLMSol
 
 """ Base objects for text data to inferencing or training LLMs. """
 

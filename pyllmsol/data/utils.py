@@ -4,7 +4,9 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 10:59:04
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-14 11:00:08
+# @Last modified time: 2024-11-28 09:12:13
+# @File path: ./pyllmsol/data/cli_instruct.py
+# @Project: PyLLMSol
 
 """ Util function for data objects. """
 
