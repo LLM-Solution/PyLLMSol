@@ -4,7 +4,9 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:33:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 10:49:20
+# @Last modified time: 2024-11-29 17:33:17
+# @File path: ./pyllmsol/training/trainer.py
+# @Project: PyLLMSol
 
 """ Trainer objects. """
 
@@ -12,14 +14,14 @@
 from logging import getLogger
 
 # Third party packages
-from torch import Tensor
+from torch import Tensor, enable_grad
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, PreTrainedTokenizerBase
 
 # Local packages
 from pyllmsol._base import _Base
 from pyllmsol.training.checkpoint import Checkpoint
-from pyllmsol.training.dataset import DataSet
+from pyllmsol.data.prompt import PromptDataSet
 from pyllmsol.training.loss import Losses
 from pyllmsol.training.utils import set_mask
 
@@ -39,8 +41,8 @@ class Trainer(_Base):
         The language model to be trained.
     tokenizer : transformers.PreTrainedTokenizerBase
         The tokenizer for encoding the data.
-    dataset : list of str or DataSet
-        A list of text samples or a `DataSet` object for training.
+    dataset : list of str or PromptDataSet
+        A list of text samples or a `PromptDataSet` object for training.
     batch_size : int
         Number of samples per batch.
     accumulation_steps : int, optional
@@ -61,8 +63,8 @@ class Trainer(_Base):
         The gradient accumulation steps.
     batch_size : int
         Number of samples per batch.
-    dataset : DataSet
-        Training DataSet instance.
+    dataset : PromptDataSet
+        Training PromptDataSet instance.
     losses : Losses
         The object tracking loss history during training.
     llm : transformers.AutoModelForCausalLM
@@ -84,18 +86,18 @@ class Trainer(_Base):
         self,
         llm: AutoModelForCausalLM,
         tokenizer: PreTrainedTokenizerBase,
-        dataset: list | DataSet,
+        dataset: list | PromptDataSet,
         batch_size: int,
         accumulation_steps: int = 1,
     ):
         if isinstance(dataset, list):
-            dataset = DataSet(dataset, batch_size=batch_size)
+            dataset = PromptDataSet(dataset, batch_size=batch_size)
 
         else:
             dataset.batch_size = batch_size
 
         super(Trainer, self).__init__(
-            llm,
+            # llm,
             # tokenizer,
             dataset,
             batch_size=batch_size,
@@ -121,12 +123,13 @@ class Trainer(_Base):
 
     def __next__(self) -> tuple[Tensor, Tensor]:
         """ Retrieves the next batch of input IDs and attention masks. """
-        data = next(self.dataset)
+        batch = next(self.dataset)
+        data = [str(b) for b in batch.items]
 
         # Set input data batch
         encoded_data = self.tokenizer(data, return_tensors='pt', padding=True)
         input_ids = encoded_data['input_ids']
-        attention_mask = self.set_mask(encoded_data.attention_mask, input_ids)
+        attention_mask = self.set_mask(encoded_data['attention_mask'], input_ids)
 
         # Display current loss and token size of data
         token_size = encoded_data['input_ids'].size(1)
@@ -148,17 +151,22 @@ class Trainer(_Base):
 
         """
         for input_ids, attention_mask in self:
-            with torch.enable_grad():
+            with enable_grad():
                 self.training_step(
                     input_ids.to(device),
                     attention_mask.to(device)
                 )
 
             if checkpoint:
-                self.dataset.set_description(descr)
+                data = self.dataset.remaining_data()
                 checkpoint(self.llm, data, tokenizer=self.tokenizer)
 
-    def set_mask(self, attention_mask: Tensor, input_ids: Tensor) -> Tensor:
+    def set_mask(
+        self,
+        attention_mask: Tensor,
+        input_ids: Tensor,
+        rate: float = 0.05,
+    ) -> Tensor:
         """ Randomly sets the attention mask.
 
         Parameters
@@ -167,6 +175,8 @@ class Trainer(_Base):
             The attention masks to update.
         input_ids : torch.Tensor
             The input IDs.
+        rate : float, optional
+            Probability to mask a token ID, default is 0.05 (5%).
 
         Returns
         -------
@@ -175,7 +185,7 @@ class Trainer(_Base):
 
         """
         for i in range(attention_mask.size()[0]):
-            attention_mask[i] = set_mask(attention_mask[i])
+            attention_mask[i] = set_mask(attention_mask[i], rate=rate)
 
         return attention_mask
 

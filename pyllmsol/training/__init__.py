@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 14:48:23
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-12 18:36:45
+# @Last modified time: 2024-11-26 18:16:09
 
 """ Description. """
 
@@ -14,11 +14,11 @@
 
 # Local packages
 from .checkpoint import Checkpoint
-from .dataset import DataBrowser, DataSet
+# from .dataset import DataBrowser, DataSet
 from .loss import Losses
 from .trainer import Trainer
 
-__all__ = [Checkpoint, DataBrowser, DataSet, Losses, Trainer]
+__all__ = [Checkpoint, Losses, Trainer]
 
 
 if __name__ == "__main__":

@@ -4,13 +4,13 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-10-29 14:35:28
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-30 15:13:00
+# @Last modified time: 2024-11-29 17:44:12
 
 """ Util functions for training. """
 
 # Built-in packages
 from itertools import chain
-from random import randint, shuffle
+from random import shuffle, sample
 
 # Third party packages
 from torch import Tensor, equal, where
@@ -154,11 +154,14 @@ def set_mask(
     """
     # Fallback if end index is not provided
     if end_idx is None:
-        end_idx = attention_mask.sum()
+        end_idx = int(attention_mask.sum())
 
-    for _ in range(int((end_idx - beginning_idx) * rate)):
-        # Set to 0 the masked data
-        attention_mask[randint(beginning_idx, end_idx - 1)] = 0
+    k = int((end_idx - beginning_idx) * rate)
+    population = range(beginning_idx, end_idx)
+    index = sample(population, k)
+
+    attention_mask[index] = 0
+
 
     return attention_mask
 
