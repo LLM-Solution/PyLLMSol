@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 09:41:32
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-08 10:14:48
+# @Last modified time: 2024-11-29 11:16:43
 
 """ Base objects. """
 
