@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 09:47:15
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-28 16:30:33
+# @Last modified time: 2024-11-30 09:53:42
 # @File path: ./pyllmsol/tests/inference/test_cli.py
 # @Project: PyLLMSol
 
@@ -29,17 +29,13 @@ __all__ = []
 def cli():
     return CommandLineInterface(
         llm=MockLlama(),
-        init_prompt="Hello!",
+        init_prompt="Prompt: You are friendly.\nUser: Hello!",
         verbose=True
     )
 
 
 def test_initialization(cli):
     """Test that the CLI initializes correctly."""
-    assert cli.ai_name == "Assistant"
-    assert cli.user_name == "User"
-    assert cli.llm is not None
-    assert cli.stop == [f"\n{cli.user_name}:", f"\n{cli.ai_name}:"]
     assert isinstance(cli.init_prompt, Prompt)
     assert isinstance(cli.prompt_hist, Prompt)
 

@@ -4,34 +4,20 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 14:28:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-28 16:32:16
+# @Last modified time: 2024-11-30 09:19:55
 
 """ Test `data/chat.py` script. """
 
 # Built-in packages
 
 # Third party packages
-from llama_cpp import LlamaTokenizer
 import pytest
 
 # Local packages
+from pyllmsol.mock import MockTokenizer
 from pyllmsol.data.chat import ChatDataSet, Chat, Message, ROLES, SEP
 
 __all__ = []
-
-
-class MockTokenizer(LlamaTokenizer):
-    def __init__(self):
-        self.pad_token_id = 0
-
-    def __bool__(self):
-        return True
-
-    def encode(self, text, add_bos=False, special=True):
-        tokens = [0] if add_bos else []
-        tokens += [i for i, _ in enumerate(text)]
-
-        return tokens
 
 
 @pytest.fixture
@@ -88,7 +74,8 @@ def test_tokens_property(sample_message):
     # Test that tokens property returns the correct token IDs
     tokens = sample_message.tokens
     # Expected tokens correspond to the word positions in the mock tokenizer
-    assert tokens == [i for i in range(len(sample_message.text))]  # header + "Hello," + "world!"
+    # assert tokens == [i for i in range(len(sample_message.text))]  # header + "Hello," + "world!"
+    assert tokens == [ord(i) for i in sample_message.text]
 
 
 def test_mask_property_for_user_role(sample_message):
@@ -161,7 +148,7 @@ def test_chat_text_property(sample_chat):
 
 
 def test_chat_tokens_property(sample_chat):
-    assert sample_chat.tokens == [0] + [i for i in range(len(sample_chat.text))]
+    assert sample_chat.tokens == [0] + [ord(i) for i in sample_chat.text]
 
 
 def test_chat_mask_property(sample_chat):
@@ -178,7 +165,7 @@ def test_pad_valid_length(sample_chat):
     total_tokens = len(sample_chat.tokens) + 5
     tokens, mask = sample_chat.pad(total_tokens)
     assert len(tokens) == total_tokens
-    assert tokens[-5:] == [0] * 5
+    assert tokens[-5:] == [-1] * 5
     assert len(tokens) == len(mask)
     assert len(mask) == total_tokens
 

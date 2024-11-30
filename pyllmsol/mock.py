@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 16:19:58
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-29 12:22:11
+# @Last modified time: 2024-11-30 11:02:16
 # @File path: ./pyllmsol/mock.py
 # @Project: PyLLMSol
 
@@ -25,7 +25,7 @@ __all__ = []
 
 class MockTokenizer(LlamaTokenizer):
     def __init__(self):
-        self.pad_token_id = 0
+        self.pad_token_id = -1
 
     def __bool__(self):
         return True
@@ -105,25 +105,6 @@ class MockAutoModelForCausalLM(AutoModelForCausalLM):
 
     def train(self, mode=True):
         self.training = mode
-
-
-# class _MockAutoModelForCausalLM(AutoModelForCausalLM, MagicMock):
-#     def __init__(self, *args, **kwargs):
-#         MagicMock.__init__(self, *args, **kwargs)
-#         self.parameters = MagicMock()
-
-#     def __call__(self, input_ids=None, attention_mask=None, labels=None, **kwargs):
-#         if input_ids is None:
-#             print("/!\\ INPUT is None")
-
-#             return MagicMock.__call__(self, **kwargs)
-
-#         outputs = MagicMock()
-#         batch_size, seq_len = input_ids.size()
-#         outputs.logits = torch.randn(batch_size, seq_len, 200)
-#         outputs.loss = MockLoss()
-
-#         return outputs
 
 
 class MockOptimizer(MagicMock):

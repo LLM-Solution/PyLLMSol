@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 10:55:40
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-27 10:15:34
+# @Last modified time: 2024-11-30 09:28:17
 
 """ Test `data/_base_data.py` script. """
 
@@ -13,36 +13,14 @@ from pathlib import Path
 from unittest.mock import Mock
 
 # Third party packages
-from llama_cpp import LlamaTokenizer
 import pytest
-from transformers import PreTrainedTokenizerBase
 
 # Local packages
+from pyllmsol.mock import MockTokenizer as MockLlamaTokenizer
+from pyllmsol.mock import MockPreTrainedTokenizerBase
 from pyllmsol.data._base_data import _BaseData, _TextData, _DataSet
 
 __all__ = []
-
-
-class MockLlamaTokenizer(LlamaTokenizer):
-    def __init__(self):
-        pass
-
-    def encode(self, text, add_bos=False, special=True):
-        return [101, 102, 103]
-
-    def __bool__(self):
-        return True
-
-
-class MockTransformersTokenizer(PreTrainedTokenizerBase):
-    def __init__(self):
-        pass
-
-    def encode(self, text, add_special_tokens=False):
-        return [101, 102, 103]
-
-    def __bool__(self):
-        return True
 
 
 @pytest.fixture
@@ -52,7 +30,7 @@ def mock_llama_tokenizer():
 
 @pytest.fixture
 def mock_transformers_tokenizer():
-    return MockTransformersTokenizer()
+    return MockPreTrainedTokenizerBase()
 
 # @pytest.fixture
 # def data():
@@ -130,20 +108,22 @@ def test_text_data_initialization(mock_llama_tokenizer, mock_transformers_tokeni
 
 
 def test_tokens_property(mock_llama_tokenizer, mock_transformers_tokenizer):
-    data = _TextData("Sample text", tokenizer=mock_transformers_tokenizer)
-    assert data.tokens == [101, 102, 103]
+    text = "Sample text"
+    data = _TextData(text, tokenizer=mock_transformers_tokenizer)
+    assert data.tokens == [0] + [ord(i) for i in text]
 
-    data = _TextData("Sample text", tokenizer=mock_llama_tokenizer)
-    assert data.tokens == [101, 102, 103]
+    data = _TextData(text, tokenizer=mock_llama_tokenizer)
+    assert data.tokens == [0] + [ord(i) for i in text]
 
 
 def test_mask_property(mock_llama_tokenizer, mock_transformers_tokenizer):
-    data = _TextData("Sample text", tokenizer=mock_transformers_tokenizer)
-    assert data.mask == [1, 1, 1]
+    text = "Sample text"
+    data = _TextData(text, tokenizer=mock_transformers_tokenizer)
+    assert data.mask == [1] * (len(text) + 1)
     assert len(data.mask) == len(data.tokens)
 
-    data = _TextData("Sample text", tokenizer=mock_llama_tokenizer)
-    assert data.mask == [1, 1, 1]
+    data = _TextData(text, tokenizer=mock_llama_tokenizer)
+    assert data.mask == [1] * (len(text) + 1)
     assert len(data.mask) == len(data.tokens)
 
 
@@ -162,8 +142,9 @@ def test_add_operator(mock_transformers_tokenizer):
 
 
 def test_get_n_tokens(mock_llama_tokenizer):
-    data = _TextData("Sample text", tokenizer=mock_llama_tokenizer)
-    assert data.get_n_tokens() == 3
+    text = "Sample text"
+    data = _TextData(text, tokenizer=mock_llama_tokenizer)
+    assert data.get_n_tokens() == len(text) + 1
 
 
 # Test _DataSet
