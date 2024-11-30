@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-12 16:27:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-21 18:12:01
+# @Last modified time: 2024-11-30 10:35:30
 
 """ Trainer objects for model with chat data template.
 
@@ -23,23 +23,25 @@ from transformers import PreTrainedTokenizerBase, AutoModelForCausalLM
 from torch import Tensor
 
 # Local packages
-from pyllmsol.data.chat import Chat, Message, DataSet
+from pyllmsol.data.chat import Chat, Message, ChatDataSet
 from pyllmsol.training.trainer import Trainer
 
 __all__ = []
 
 
 class TrainerInstruct(Trainer):
+    """ Trainer instruct class. """
+
     def __init__(
         self,
         llm: AutoModelForCausalLM,
         tokenizer: PreTrainedTokenizerBase,
-        dataset: DataSet | list[Chat | list[Message | dict[str, str]]],
+        dataset: ChatDataSet | list[Chat | list[Message | dict[str, str]]],
         batch_size: int,
         accumulation_steps: int = 1,
     ):
-        if not isinstance(dataset, DataSet):
-            dataset = DataSet(dataset, tokenizer, batch_size=batch_size)
+        if not isinstance(dataset, ChatDataSet):
+            dataset = ChatDataSet(dataset, tokenizer, batch_size=batch_size)
 
         else:
             dataset.batch_size = batch_size

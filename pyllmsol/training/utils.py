@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-10-29 14:35:28
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-29 17:44:12
+# @Last modified time: 2024-11-30 10:18:56
 
 """ Util functions for training. """
 
@@ -13,7 +13,8 @@ from itertools import chain
 from random import shuffle, sample
 
 # Third party packages
-from torch import Tensor, equal, where
+import torch
+from torch import Tensor
 
 # Local packages
 
@@ -40,7 +41,8 @@ def find_token(token_id: int, input_ids: Tensor, start: int = 0) -> int:
 
     """
 
-    idx = where(input_ids[start:] == token_id, 1., 0.).nonzero(as_tuple=True)[0][-1]
+    idx = (torch.where(input_ids[start:] == token_id, 1., 0.)
+                .nonzero(as_tuple=True)[0][-1])
 
     return start + idx
 
@@ -66,7 +68,7 @@ def find_sequence(seq_ids: Tensor, input_ids: Tensor, start: int = 0) -> int:
     """
     n = len(seq_ids)
     for i in range(start, len(input_ids) - n + 1):
-        if equal(seq_ids, input_ids[i: i + n]):
+        if torch.equal(seq_ids, input_ids[i: i + n]):
 
             return i + n
 

@@ -4,13 +4,12 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-10-09 17:57:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-13 07:12:16
+# @Last modified time: 2024-11-30 10:53:19
 
 """ Objects to load, save and/or make a checkpoint of models and data. """
 
 # Built-in packages
 from json import loads, dumps
-from logging import getLogger
 from pathlib import Path
 from time import time
 
@@ -60,12 +59,7 @@ class Checkpoint(_Base):
         path: str | Path = "./checkpoint/",
         timestep: int = 300
     ):
-        super(Checkpoint, self).__init__(
-            logger=True,
-            path=path,
-            timestep=timestep,
-        )
-        # self.logger =getLogger(__name__)
+        super().__init__(logger=True, path=path, timestep=timestep)
         # Set variables
         self.path = Path(path) if isinstance(path, str) else path
         self.timestep = timestep
@@ -133,7 +127,7 @@ class Checkpoint(_Base):
             Object to tokenize text data.
 
         """
-        self.logger.debug(f"Checkpoint is saving model and data")
+        self.logger.debug("Checkpoint is saving model and data")
 
         # Save model
         model_path = self.path / "model"
@@ -195,7 +189,7 @@ class Checkpoint(_Base):
             data = loads(f.read())
             self.logger.debug(f"Data of size {len(data):,} loaded from {data_path}")
 
-        self.logger.info(f"<Model and dataset loaded from checkpoint>")
+        self.logger.info("<Model and dataset loaded from checkpoint>")
 
         return llm, data
 
@@ -203,7 +197,7 @@ class Checkpoint(_Base):
         """ Delete irreversibly the checkpoint. """
         # TODO : python3.12 => use walk method
         if self.path.exists():
-            model_path = (self.path / "model")
+            model_path = self.path / "model"
             if model_path.exists():
                 # Delete model files
                 for f in model_path.rglob("*"):
@@ -285,8 +279,7 @@ class LoaderLLM(_Base):
         checkpoint: bool | Checkpoint,
         **kwargs,
     ):
-        # self.logger = getLogger(__name__)
-        super(LoaderLLM, self).__init__(
+        super().__init__(
             logger=True,
             model_path=model_path,
             data_path=data_path,

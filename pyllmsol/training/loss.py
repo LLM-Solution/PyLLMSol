@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-12 18:29:10
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-12 18:33:59
+# @Last modified time: 2024-11-30 10:31:14
 
 """ Loss objects. """
 
@@ -138,7 +138,7 @@ class Losses:
         """
         if window_size < 1:
             raise ValueError("Window size must be at least 1.")
-        
+
         return [
             sum(self.loss_history[i:i + window_size]) / window_size
             for i in range(len(self.loss_history) - window_size + 1)

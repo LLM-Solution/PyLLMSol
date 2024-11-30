@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-28 16:13:59
+# @Last modified time: 2024-11-30 09:41:21
 # @File path: ./pyllmsol/inference/_base_cli.py
 # @Project: PyLLMSol
 
@@ -207,15 +207,7 @@ class _BaseCommandLineInterface(_Base):
         self.exit(f"Goodbye {self.user_name} ! I hope to see you "
                   f"soon !\n")
 
-    def answer(self, output: str | Generator[str, None, None]):
-        """ Display the answer of the LLM to the user.
-
-        Parameters
-        ----------
-        output : str or generator
-            The generated output of the LLM.
-
-        """
+    def _answer(self, output: str | Generator[str, None, None]) -> str:
         str_time = strftime("%H:%M:%S")
         self._output(f"{str_time} | {self.ai_name}:", end="", flush=True)
 
@@ -231,6 +223,18 @@ class _BaseCommandLineInterface(_Base):
 
             self._output("\n")
 
+        return answer
+
+    def answer(self, output: str | Generator[str, None, None]):
+        """ Display the answer of the LLM to the user.
+
+        Parameters
+        ----------
+        output : str or generator
+            The generated output of the LLM.
+
+        """
+        answer = self._answer(output)
         self.prompt_hist += f"{answer}"
         self.logger.debug(f"ANSWER - {self.ai_name}: {_TextData(answer)}")
 

@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:05
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-28 09:12:28
+# @Last modified time: 2024-11-30 10:16:52
 # @File path: ./pyllmsol/data/_base_data.py
 # @Project: PyLLMSol
 
@@ -65,8 +65,8 @@ class _BaseData(ABC):
     def __init__(
         self,
         items: list,
-        item_type: Type,
-        fallback_type: Type,
+        item_type: type,
+        fallback_type: type,
         tokenizer: TokenizerType,
     ):
         self.tokenizer = tokenizer
@@ -211,7 +211,8 @@ class _BaseData(ABC):
     def __len__(self):
         return len(self.items)
 
-    def to_json(self):
+    def to_json(self) -> list:
+        """ Convert object to JSON format. """
         return [item.to_json() for item in self.items]
 
 
@@ -447,23 +448,25 @@ class _DataSet(_BaseData):
     ):
         super(_DataSet, self).__init__(items, _TextData, str, tokenizer)
         self.batch_size = batch_size
+        self.i = None
+        self.pbar = None
         self._set_boundary(start, end=end)
 
     def _set_boundary(self, start: int, end: int = None):
-        T = len(self.items)
-        if start < 0 or start > T:
+        max_end = len(self.items)
+        if start < 0 or start > max_end:
             raise IndexError(f"Start index {start} is out of bounds for "
-                             f"data of size {T}")
+                             f"data of size {max_end}")
 
         else:
             self.i = self.start = start
 
         if end is None:
-            self.end = T
+            self.end = max_end
 
-        elif end > T:
+        elif end > max_end:
             raise IndexError(f"End index {end} is out of bounds for data "
-                             f"of size {T}")
+                             f"of size {max_end}")
 
         elif start >= end:
             raise IndexError(f"End index {end} must be greater than start "
@@ -703,17 +706,22 @@ class _DataSet(_BaseData):
 
         """
         if isinstance(item, self.__class__):
+            # If item is a DataSet object then add thus data to self data
             new_items = self.items + item.items
 
         else:
+            # If item is not a DataSet try to process it (list of data or list
+            # of list of str)
             new_items = self.items + [self._process_item(item)]
 
         if inplace:
+            # Update self DataSet object
             self.items = new_items
 
             return self
 
         else:
+            # Create a new DataSet object
             return self.__class__(
                 new_items,
                 batch_size=self.batch_size,

@@ -4,9 +4,9 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 14:48:23
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-26 18:16:09
+# @Last modified time: 2024-11-30 10:56:02
 
-""" Description. """
+""" Training module. """
 
 # Built-in packages
 
@@ -18,7 +18,7 @@ from .checkpoint import Checkpoint
 from .loss import Losses
 from .trainer import Trainer
 
-__all__ = [Checkpoint, Losses, Trainer]
+__all__ = ['Checkpoint', 'Losses', 'Trainer']
 
 
 if __name__ == "__main__":

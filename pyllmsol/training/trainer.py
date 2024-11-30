@@ -4,18 +4,16 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:33:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-29 17:33:17
+# @Last modified time: 2024-11-30 10:29:49
 # @File path: ./pyllmsol/training/trainer.py
 # @Project: PyLLMSol
 
 """ Trainer objects. """
 
 # Built-in packages
-from logging import getLogger
 
 # Third party packages
 from torch import Tensor, enable_grad
-from tqdm import tqdm
 from transformers import AutoModelForCausalLM, PreTrainedTokenizerBase
 
 # Local packages
@@ -96,9 +94,7 @@ class Trainer(_Base):
         else:
             dataset.batch_size = batch_size
 
-        super(Trainer, self).__init__(
-            # llm,
-            # tokenizer,
+        super().__init__(
             dataset,
             batch_size=batch_size,
             accumulation_steps=accumulation_steps,
@@ -184,7 +180,7 @@ class Trainer(_Base):
             Updated attention masks.
 
         """
-        for i in range(attention_mask.size()[0]):
+        for i in range(input_ids.size()[0]):
             attention_mask[i] = set_mask(attention_mask[i], rate=rate)
 
         return attention_mask

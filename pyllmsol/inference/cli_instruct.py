@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-09 16:49:20
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-28 16:27:49
+# @Last modified time: 2024-11-30 11:05:38
 # @File path: ./pyllmsol/inference/cli_instruct.py
 # @Project: PyLLMSol
 
@@ -22,8 +22,6 @@ References
 """
 
 # Built-in packages
-from pathlib import Path
-from time import strftime
 from typing import Generator
 
 # Third party packages
@@ -94,11 +92,7 @@ class InstructCLI(_BaseCommandLineInterface):
         init_prompt: str | Chat = None,
         verbose: bool = False,
     ):
-        super(InstructCLI, self).__init__(
-            llm,
-            init_prompt=init_prompt,
-            verbose=verbose,
-        )
+        super().__init__(llm, init_prompt=init_prompt, verbose=verbose)
         self.stop = "<|eot_id|>"
 
     def answer(self, output: str | Generator[str, None, None]):
@@ -110,21 +104,7 @@ class InstructCLI(_BaseCommandLineInterface):
             The generated output of the LLM.
 
         """
-        str_time = strftime("%H:%M:%S")
-        self._output(f"{str_time} | {self.ai_name}:", end="", flush=True)
-
-        if isinstance(output, str):
-            answer = output
-            self._output(answer)
-
-        else:
-            answer = ""
-            for text in output:
-                answer += text
-                self._output(text, end='', flush=True)
-
-            self._output("\n")
-
+        answer = self._answer(output)
         self.prompt_hist['assistant'] = answer
         self.logger.debug(f"ANSWER - {self.ai_name}: {answer}")
 
@@ -173,7 +153,9 @@ class InstructCLI(_BaseCommandLineInterface):
                 if message["role"] != "system":
                     break
 
-            if self.prompt_hist.items[i]['role'] != "system":
+            role = self.prompt_hist.items[i]['role']
+
+            if role != "system":
                 poped_prompt = self.prompt_hist.items.pop(i)
                 self.logger.debug(f"Pop the following part: {poped_prompt}")
 

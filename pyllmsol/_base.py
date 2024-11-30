@@ -4,12 +4,12 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 09:41:32
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-29 11:16:43
+# @Last modified time: 2024-11-30 10:01:57
 
 """ Base objects. """
 
 # Built-in packages
-from logging import getLogger
+from logging import getLogger, NullHandler
 from pprint import pformat
 
 # Third party packages
@@ -65,7 +65,7 @@ class _Base:
         self._set_logger(self.__class__.__name__)
 
         if not logger:
-            self.logger.addHandler(logging.NullHandler())
+            self.logger.addHandler(NullHandler())
 
         args_debug = ", ".join(f"{type(arg).__name__}({arg})" for arg in args)
         kwargs_debug = ", ".join(f"{k}={repr(v)}" for k, v in kwargs.items())

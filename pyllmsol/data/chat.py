@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:28
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-28 09:12:24
+# @Last modified time: 2024-11-30 09:50:52
 # @File path: ./pyllmsol/data/chat.py
 # @Project: PyLLMSol
 
@@ -553,19 +553,24 @@ class Chat(_TextData, _BaseData):
 
         """
         if isinstance(item, self.__class__):
-            new_items = self.items + item.items
+            # If item is a Chat object then add thus messages to self messages
+            new_messages = self.items + item.items
 
         else:
-            new_items = self.items + [self._process_item(item)]
+            # If item is not a Chat try to process it (list of message or list
+            # of sting)
+            new_messages = self.items + [self._process_item(item)]
 
         if inplace:
-            self.items = new_items
+            # Update self Chat object
+            self.items = new_messages
 
             return self
 
         else:
+            # Create a new Chat object
             return self.__class__(
-                new_items,
+                new_messages,
                 tokenizer=self.tokenizer,
             )
 

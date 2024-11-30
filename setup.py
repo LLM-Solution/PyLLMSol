@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:54:21
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-29 15:58:53
+# @Last modified time: 2024-11-30 10:34:21
 
 """ Setup PyLLMSol package. """
 
@@ -19,13 +19,16 @@ __all__ = []
 
 
 if __name__ == "__main__":
+    with open("README.md", encoding='utf-8') as f:
+        long_description = f.read()
+
     setup(
         name="pyllmsol",
         version="0.1.0",
         author="Arthur Bernard",
         author_email="arthur.bernard.92@gmail.com",
         description="A package for large language model solutions",
-        long_description=open("README.md").read(),
+        long_description=long_description,
         long_description_content_type="text/markdown",
         url="https://github.com/LLM-Solution/PyLLMSol",
         packages=find_packages(),
