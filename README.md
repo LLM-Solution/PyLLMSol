@@ -1,21 +1,49 @@
-# Python Tool Box for LLM Solutions
+# Python Tool Box for [LLM Solutions](https://llm-solutions.fr)
 
-PyLLMSol is a Python package designed to simplify the training and inference processes for large language models (LLMs). With dedicated modules for both training and inference, PyLLMSol allows users to create checkpoints, manage prompts, and run models using CLI or API interfaces.
+![Pylint](https://github.com/LLM-Solution/PyLLMSol/actions/workflows/pylint.yml/badge.svg)
+
+**PyLLMSol** is a Python package designed to simplify the training and inference processes for **large language models (LLMs)**. With dedicated modules for both **training** and **inference**, **PyLLMSol** allows users to create checkpoints, manage prompts, and run models using CLI or API interfaces.
+
+## Table of Contents
+- [Installation](#installation)
+- [Features](#features)
+- [Structure](#structure)
+- [Dependencies](#dependencies)
+- [Getting Started](#getting-started)
+- [License](#license)
+- [Author](#author)
 
 ## Installation
 
-To install PyLLMSol, clone this repository and install the package using `pip`:
+To install **PyLLMSol** and its dependencies, follow these steps:
+
+### 1. Install PyTorch
+
+First, install **PyTorch** with GPU or CPU support by following the instructions on the [PyTorch official website](https://pytorch.org/get-started/locally/). Choose the appropriate command for your operating system, Python version, and hardware.
+
+### 2. Clone the repository
+
+Clone the **PyLLMSol** repository to your local machine:
 
 ```bash
 git clone https://github.com/LLM-Solution/PyLLMSol.git
 cd PyLLMSol
-pip install .
 ```
 
-You can also install the dependencies directly:
+### 3. Install dependencies
+
+Install the required Python packages listed in the requirements.txt file:
 
 ```bash
 pip install -r requirements.txt
+```
+
+### 4. Install PyLLMSol
+
+Install the **PyLLMSol** package using pip:
+
+```bash
+pip install .
 ```
 
 ## Features
@@ -104,13 +132,17 @@ api.run(host="0.0.0.0", port=5000)
 
 ## Dependencies
 
-PyLLMSol requires Python 3.6 or later. Core dependencies include:
+PyLLMSol requires Python 3.10 or later. Core dependencies include:
 
 - `flask>=3.0.3`
+- `llama-cpp-python>=0.3.1`
+- `matplotlib>=3.9.2`
+- `pandas>=2.2.3`
+- `peft>=0.13.2`
+- `sentencepiece>=0.2.0`
 - `torch>=2.5.0`
 - `transformers>=4.45.2`
 - `tqdm>=4.66.5`
-- `llama-cpp-python>=0.3.1`
 
 For a full list, see requirements.txt.
 
@@ -126,7 +158,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Author
 
-LLM Solutions - Arthur Bernard - contact@llm-solutions.fr
+[LLM Solutions](https://llm-solutions.fr) - [Arthur Bernard](https://www.linkedin.com/in/arthur-bernard-789955152/) - contact@llm-solutions.fr
 
 ___
 
