@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 09:41:21
+# @Last modified time: 2024-11-30 11:39:25
 # @File path: ./pyllmsol/inference/_base_cli.py
 # @Project: PyLLMSol
 
@@ -95,7 +95,7 @@ class _BaseCommandLineInterface(_Base):
 
         self.set_init_prompt(init_prompt)
 
-        super(_BaseCommandLineInterface, self).__init__(
+        super().__init__(
             logger=True,
             llm=self.llm,
             init_prompt=self.init_prompt,
@@ -325,11 +325,11 @@ class _BaseCommandLineInterface(_Base):
         #         conversation is removed ?
         #         Currently not working
         raise NotImplementedError
-        while self._get_n_token(str(self.prompt_hist)) > self.llm.n_ctx:
-            chunked_prompt = str(self.prompt_hist).split("\n")
-            poped_prompt = chunked_prompt.pop(1)
-            self.logger.debug(f"Pop the following part: {poped_prompt}")
-            self.prompt_hist = "\n".join(chunked_prompt)
+        # while self._get_n_token(str(self.prompt_hist)) > self.llm.n_ctx:
+        #     chunked_prompt = str(self.prompt_hist).split("\n")
+        #     poped_prompt = chunked_prompt.pop(1)
+        #     self.logger.debug(f"Pop the following part: {poped_prompt}")
+        #     self.prompt_hist = "\n".join(chunked_prompt)
 
     def _get_n_token(self, sentence: str) -> int:
         return len(self.llm.tokenize(sentence.encode('utf-8')))
@@ -376,7 +376,7 @@ class _BaseCommandLineInterface(_Base):
             )
 
         self.logger.debug("Loading initial prompt")
-        r = self(self.prompt_hist, stream=False, max_tokens=1)
+        _ = self(self.prompt_hist, stream=False, max_tokens=1)
 
     def _stream(self, txt: str):
         for chars in txt:

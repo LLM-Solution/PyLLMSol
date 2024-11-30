@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:28
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 09:50:52
+# @Last modified time: 2024-11-30 11:40:25
 # @File path: ./pyllmsol/data/chat.py
 # @Project: PyLLMSol
 
@@ -25,12 +25,12 @@ from json import loads
 
 # Third party packages
 from llama_cpp import LlamaTokenizer
-from torch import tensor
+import torch
+from torch import Tensor
 from transformers import PreTrainedTokenizerBase
 
 # Local packages
 from pyllmsol.data._base_data import _BaseData, _TextData, _DataSet
-from pyllmsol.data.utils import truncate_text
 
 __all__ = []
 
@@ -269,7 +269,7 @@ class Message(_BaseData):
             return Message(
                 role=self.role,
                 content=self.content + content,
-                tokenizer=tokenizer,
+                tokenizer=self.tokenizer,
             )
 
     def to_json(self):
@@ -727,7 +727,7 @@ class ChatDataSet(_DataSet, _BaseData):
     def get_padded(
         self,
         return_tensor: bool = False,
-    ) -> list[list[int]] | tensor:
+    ) -> list[list[int]] | Tensor:
         """ Pad all chats in the dataset to the same length.
 
         Pads each chat in the dataset to the length of the longest chat,
@@ -756,8 +756,8 @@ class ChatDataSet(_DataSet, _BaseData):
             mask.append(_mask)
 
         if return_tensor:
-            tokens = tensor(tokens)
-            mask = tensor(mask)
+            tokens = torch.tensor(tokens)
+            mask = torch.tensor(mask)
 
         return tokens, mask
 

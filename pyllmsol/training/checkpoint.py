@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-10-09 17:57:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 10:53:19
+# @Last modified time: 2024-11-30 11:28:09
 
 """ Objects to load, save and/or make a checkpoint of models and data. """
 
@@ -309,7 +309,9 @@ class LoaderLLM(_Base):
             )
             self.logger.debug(f"<Model loaded from {model_path}>")
 
-            self.data = loads(Path(data_path).open("r").read())
+            with Path(data_path).open("r", encoding="utf-8") as f:
+                self.data = loads(f.read())
+
             self.logger.debug(f"<Dataset of size ({len(self.data):,}) loaded "
                               f"from {data_path}>")
 

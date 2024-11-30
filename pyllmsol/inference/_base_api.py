@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 08:59:41
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-28 16:45:12
+# @Last modified time: 2024-11-30 11:37:09
 # @File path: ./pyllmsol/inference/_base_api.py
 # @Project: PyLLMSol
 
@@ -19,6 +19,7 @@ LLM, resetting or modifying the prompt, and managing the server lifecycle.
 # Built-in packages
 from pathlib import Path
 from threading import Thread
+from time import sleep
 
 # Third party packages
 from flask import Flask, request, Response
@@ -123,7 +124,7 @@ class API(_Base):
         n_ctx: int = 32768,
         debug: bool = False,
     ):
-        super(API, self).__init__(
+        super().__init__(
             logger=True,
             model_path=model_path,
             init_prompt=init_prompt,
@@ -237,7 +238,7 @@ class API(_Base):
 
             """
             self.cli.reset_prompt()
-            self.logger.debug(f"GET reset prompt")
+            self.logger.debug("GET reset prompt")
 
             return Response(status=200)
 
@@ -323,7 +324,7 @@ class API(_Base):
             """
             question = request.json.get("question")
             stream = request.json.get("stream", True)
-            session_id = request.json.get("session_id")
+            # session_id = request.json.get("session_id")
             self.logger.debug(f"ask: {question}")
 
             # FIXME : should be escaped ? to avoid code injection
