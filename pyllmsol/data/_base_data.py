@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:05
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 10:16:52
+# @Last modified time: 2024-12-02 12:36:20
 # @File path: ./pyllmsol/data/_base_data.py
 # @Project: PyLLMSol
 
@@ -69,6 +69,7 @@ class _BaseData(ABC):
         fallback_type: type,
         tokenizer: TokenizerType,
     ):
+        super()
         self.tokenizer = tokenizer
         self._item_type = item_type
         self._fallback_type = fallback_type
@@ -399,10 +400,6 @@ class _DataSet(_BaseData):
         The items to iterate over, typically loaded from JSON or JSONL.
     batch_size : int
         The size of each data batch, default is 1.
-    start : int, optional
-        The index to start iterating from, default is 0.
-    end : int, optional
-        The index to stop iterating, default is None, which iterates to the end.
     tokenizer : TokenizerType, optional
         Tokenizer object.
 
@@ -442,24 +439,32 @@ class _DataSet(_BaseData):
         self,
         items: list[_TextData | str],
         batch_size: int = 1,
-        start: int = 0,
-        end: int = None,
         tokenizer: TokenizerType = None,
     ):
-        super(_DataSet, self).__init__(items, _TextData, str, tokenizer)
+        super().__init__(items, _TextData, str, tokenizer)
         self.batch_size = batch_size
         self.i = None
         self.pbar = None
-        self._set_boundary(start, end=end)
+        self.set_boundary(0, end=None)
 
-    def _set_boundary(self, start: int, end: int = None):
+    def set_boundary(self, start: int, end: int = None):
+        """ Set dataset boundaries.
+
+        Parameters
+        ----------
+        start : int
+            The index to start iterating from.
+        end : int, optional
+            The index to stop iterating, default is None, which iterates to the
+            end.
+
+        """
         max_end = len(self.items)
         if start < 0 or start > max_end:
             raise IndexError(f"Start index {start} is out of bounds for "
                              f"data of size {max_end}")
 
-        else:
-            self.i = self.start = start
+        self.i = self.start = start
 
         if end is None:
             self.end = max_end
@@ -526,8 +531,6 @@ class _DataSet(_BaseData):
         return self.__class__(
             self.items[i: j],
             batch_size=self.batch_size,
-            start=0,
-            end=None,
             tokenizer=self.tokenizer,
         )
 
@@ -569,8 +572,6 @@ class _DataSet(_BaseData):
         cls,
         path: Path,
         batch_size: int = 1,
-        start: int = 0,
-        end: int = None,
         tokenizer: TokenizerType = None,
     ):
         """ Create a DataSet instance from a JSON file.
@@ -585,11 +586,6 @@ class _DataSet(_BaseData):
             The file path of the JSON file to load.
         batch_size : int
             The size of each data batch for iteration, default is 1.
-        start : int, optional
-            The index to start iterating from, default is 0.
-        end : int, optional
-            The index to stop iterating, default is None, which iterates to the
-            end of the items.
         tokenizer : TokenizerType, optional
             Tokenizer object.
 
@@ -613,16 +609,13 @@ class _DataSet(_BaseData):
         with path.open("r", encoding='utf-8') as f:
             items = loads(f.read())
 
-        return cls(items, batch_size=batch_size, start=start, end=end,
-                   tokenizer=tokenizer)
+        return cls(items, batch_size=batch_size, tokenizer=tokenizer)
 
     @classmethod
     def from_jsonl(
         cls,
         path: Path,
         batch_size: int = 1,
-        start: int = 0,
-        end: int = None,
         tokenizer: TokenizerType = None,
     ):
         """ Create a DataSet instance from a JSONL file.
@@ -668,8 +661,7 @@ class _DataSet(_BaseData):
                 data = loads(line.strip())
                 items.append(data)
 
-        return cls(items, batch_size=batch_size, start=start, end=end,
-                   tokenizer=tokenizer)
+        return cls(items, batch_size=batch_size, tokenizer=tokenizer)
 
     def __repr__(self):
         remaining = len(self.remaining_data())

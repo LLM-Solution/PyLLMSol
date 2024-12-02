@@ -4,13 +4,14 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-26 17:39:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-28 16:30:42
+# @Last modified time: 2024-12-02 11:23:00
 # @File path: ./pyllmsol/tests/inference/test_base_cli.py
 # @Project: PyLLMSol
 
 """ Test base CLI object. """
 
 # Built-in packages
+from time import strftime
 from unittest.mock import patch
 
 # Third party packages
@@ -58,7 +59,7 @@ def test_run_exit(mock_print, mock_input, cli):
     """Test that the run method exits gracefully."""
     cli.run(stream=False)
     mock_print.assert_called_with(
-        f"{cli.ai_name}: Goodbye {cli.user_name} ! I hope to see you soon !\n",
+        (f"{strftime("%H:%M:%S")} | {cli.ai_name}: Goodbye {cli.user_name} ! I hope to see you soon !\n"),
         end='', flush=True
     )
 

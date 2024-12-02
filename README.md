@@ -117,7 +117,7 @@ The `inference` module supports generating responses from the model and includes
 Run the command-line interface to interact with your LLM:
 
 ```bash
-python -m pyllmsol.inference._base_cli --model_path path/to/model
+python -m pyllmsol.inference.cli --model_path path/to/model.gguf
 ```
 
 #### API Usage
@@ -125,9 +125,10 @@ python -m pyllmsol.inference._base_cli --model_path path/to/model
 To launch the API:
 
 ```python
-from pyllmsol.inference import API
+from pyllmsol.inference import API, CommandLineInterface
 
-api = API(model_path='path/to/model', init_prompt='Hello! How can I assist you?')
+cli = CommandLineInterface.from_path(model_path='path/to/model', init_prompt='Hello! How can I assist you?')
+api = API(cli)
 api.run(host="0.0.0.0", port=5000)
 ```
 

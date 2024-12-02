@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-27 10:07:12
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 09:57:02
+# @Last modified time: 2024-12-02 12:15:31
 
 """ Test Prompt objects. """
 
@@ -116,7 +116,7 @@ def test_prompt_add(mock_llama_tokenizer):
 def test_remaining_data(mock_llama_tokenizer):
     prompt_list = ["Prompt one.", "Prompt two.", "Prompt three."]
     dataset = PromptDataSet(prompt_list, batch_size=2, tokenizer=mock_llama_tokenizer)
-    dataset._set_boundary(start=1, end=3)
+    dataset.set_boundary(start=1, end=3)
     remaining_data = dataset.remaining_data()
     assert len(remaining_data) == 2
 

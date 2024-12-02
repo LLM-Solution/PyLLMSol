@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:33:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 10:29:49
+# @Last modified time: 2024-12-02 10:55:14
 # @File path: ./pyllmsol/training/trainer.py
 # @Project: PyLLMSol
 
@@ -89,7 +89,11 @@ class Trainer(_Base):
         accumulation_steps: int = 1,
     ):
         if isinstance(dataset, list):
-            dataset = PromptDataSet(dataset, batch_size=batch_size)
+            dataset = PromptDataSet(
+                dataset,
+                batch_size=batch_size,
+                tokenizer=tokenizer,
+            )
 
         else:
             dataset.batch_size = batch_size

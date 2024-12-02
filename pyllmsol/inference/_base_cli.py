@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 11:39:25
+# @Last modified time: 2024-12-02 11:28:06
 # @File path: ./pyllmsol/inference/_base_cli.py
 # @Project: PyLLMSol
 
@@ -49,7 +49,7 @@ class _BaseCommandLineInterface(_Base):
     init_prompt : str, optional
         Initial prompt to feed the LLM.
     verbose : bool, optional
-        If True then LLM is run with verbosity. Default is False.
+        If True then CLI is run with verbosity. Default is False.
 
     Methods
     -------
@@ -115,11 +115,8 @@ class _BaseCommandLineInterface(_Base):
     def from_path(
         cls,
         model_path: Path | str,
-        lora_path: Path | str = None,
         init_prompt: str | _TextData = None,
         verbose: bool = False,
-        n_ctx: int = 32768,
-        n_threads: int = 6,
         **kwargs,
     ):
         """ Instanciate CLI object with Large Language Model loaded from path.
@@ -128,14 +125,13 @@ class _BaseCommandLineInterface(_Base):
         ----------
         model_path : Path or str
             Path to load weight of the model.
-        lora_path : Path or str, optional
-            Path to load LoRA weights.
-        n_ctx : int, optional
-            Maximum number of input tokens for LLM, default is 32 768.
-        n_threads : int, optional
-            Number of threads to compute the inference.
+        init_prompt : str, optional
+            Initial prompt to feed the LLM.
+        verbose : bool, optional
+            If True then CLI is run with verbosity. Default is False.
         **kwargs
-            Additional arguments passed to the `llama_cpp.Llama` object [1]_.
+            Additional arguments passed to the `llama_cpp.Llama` object [1]_,
+            eg: lora_path, n_ctx, n_thread, etc.
 
         References
         ----------
@@ -145,10 +141,7 @@ class _BaseCommandLineInterface(_Base):
         # Set LLM model
         llm = Llama(
             model_path=str(model_path),
-            n_ctx=n_ctx,
             verbose=False,
-            n_threads=n_threads,
-            lora_path=lora_path,
             **kwargs,
         )
 
@@ -347,8 +340,8 @@ class _BaseCommandLineInterface(_Base):
 
         """
         if txt is not None:
-
-            txt = f"{self.ai_name}: {txt}"
+            str_time = strftime("%H:%M:%S")
+            txt = f"{str_time} | {self.ai_name}: {txt}"
 
             if stream:
                 self._stream(txt)

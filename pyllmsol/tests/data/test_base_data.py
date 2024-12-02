@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 10:55:40
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 09:28:17
+# @Last modified time: 2024-12-02 12:07:26
 
 """ Test `data/_base_data.py` script. """
 
@@ -179,7 +179,7 @@ def test_dataset_out_of_bounds_iteration(mock_transformers_tokenizer):
 def test_remaining_data(mock_llama_tokenizer):
     text_list = ["Text one.", "Text two.", "Text three."]
     dataset = _DataSet(text_list, batch_size=2, tokenizer=mock_llama_tokenizer)
-    dataset._set_boundary(start=1, end=3)
+    dataset.set_boundary(start=1, end=3)
     remaining_data = dataset.remaining_data()
     assert len(remaining_data) == 2
 

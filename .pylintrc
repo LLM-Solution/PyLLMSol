@@ -442,6 +442,8 @@ disable=raw-checker-failed,
         use-implicit-booleaness-not-comparison-to-zero,
         W1203,  # f-string in logger
         R1705,  # unecessary elif
+        W0231,  # super-init-not-called
+        W0107,  # unnecessary-pass
 
 
 # Enable the message, report, category or checker with the given id(s). You can

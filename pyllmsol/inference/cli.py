@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 09:42:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-28 16:13:36
+# @Last modified time: 2024-12-02 10:46:04
 # @File path: ./pyllmsol/inference/cli.py
 # @Project: PyLLMSol
 
@@ -82,4 +82,24 @@ class CommandLineInterface(_BaseCommandLineInterface):
 
 
 if __name__ == "__main__":
-    pass
+    from pyllmsol.argparser import CLIArgParser
+    # import logging.config
+
+    parser = CLIArgParser(file=__file__)
+    args = parser()
+    print(parser)
+
+    if args.verbose:
+        # Load logging configuration
+        # logging.config.fileConfig('./logging.ini')
+        pass
+
+    cli = CommandLineInterface.from_path(
+        model_path=args.model_path,
+        init_prompt=args.init_prompt,
+        verbose=args.verbose,
+        lora_path=args.lora_path,
+        n_ctx=args.n_ctx,
+        n_threads=args.n_threads,
+    )
+    cli.run()

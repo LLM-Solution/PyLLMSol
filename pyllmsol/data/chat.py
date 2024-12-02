@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:28
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 11:40:25
+# @Last modified time: 2024-12-02 12:37:27
 # @File path: ./pyllmsol/data/chat.py
 # @Project: PyLLMSol
 
@@ -258,9 +258,9 @@ class Message(_BaseData):
 
         """
         if not isinstance(content, str):
-            TypeError(f"Message addition support only string.")
+            raise TypeError("Message addition support only string.")
 
-        elif inplace:
+        if inplace:
             self.content += content
 
             return self
@@ -273,7 +273,7 @@ class Message(_BaseData):
             )
 
     def to_json(self):
-        return dict(role=self.role, content=self.content, **self.metadata)
+        return {'role': self.role, 'content': self.content, **self.metadata}
 
 
 class Chat(_TextData, _BaseData):
@@ -717,12 +717,10 @@ class ChatDataSet(_DataSet, _BaseData):
         items: list[Chat | list[Message | dict[str, str]]],
         tokenizer: TokenizerType,
         batch_size: int = 1,
-        start: int = 0,
-        end: int = None,
     ):
         _BaseData.__init__(self, items, Chat, list, tokenizer)
         self.batch_size = batch_size
-        self._set_boundary(start, end=end)
+        self.set_boundary(0, end=None)
 
     def get_padded(
         self,

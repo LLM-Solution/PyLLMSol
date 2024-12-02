@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-09 16:49:20
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 11:05:38
+# @Last modified time: 2024-12-02 12:14:51
 # @File path: ./pyllmsol/inference/cli_instruct.py
 # @Project: PyLLMSol
 
@@ -148,10 +148,10 @@ class InstructCLI(_BaseCommandLineInterface):
 
         """
         while self.prompt_hist.get_n_tokens() > self.llm.n_ctx:
-            # Remove the second first item of messages list
-            for i, message in enumerate(self.prompt_hist.items):
-                if message["role"] != "system":
-                    break
+            # Remove first message(s) but not system role
+            i = 0
+            while self.prompt_hist.items[i]['role'] == 'system':
+                i += 1
 
             role = self.prompt_hist.items[i]['role']
 
