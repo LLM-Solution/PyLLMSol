@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-12 16:27:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 10:35:30
+# @Last modified time: 2024-12-02 13:12:50
 
 """ Trainer objects for model with chat data template.
 
@@ -37,21 +37,16 @@ class TrainerInstruct(Trainer):
         llm: AutoModelForCausalLM,
         tokenizer: PreTrainedTokenizerBase,
         dataset: ChatDataSet | list[Chat | list[Message | dict[str, str]]],
-        batch_size: int,
         accumulation_steps: int = 1,
     ):
         if not isinstance(dataset, ChatDataSet):
-            dataset = ChatDataSet(dataset, tokenizer, batch_size=batch_size)
-
-        else:
-            dataset.batch_size = batch_size
+            dataset = ChatDataSet(dataset, tokenizer)
 
         Trainer.__init__(
             self,
             llm,
             tokenizer,
             dataset,
-            batch_size=batch_size,
             accumulation_steps=accumulation_steps,
         )
 

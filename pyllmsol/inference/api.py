@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-12-02 11:35:15
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 11:51:53
+# @Last modified time: 2024-12-02 13:08:45
 # @File path: ./pyllmsol/inference/api.py
 # @Project: PyLLMSol
 
@@ -303,7 +303,7 @@ class API(_Base):
             # session_id = request.json.get("session_id")
             self.logger.debug(f"ask: {question}")
 
-            # FIXME : should be escaped ? to avoid code injection
+            # TODO : should be escaped ? to avoid code injection
             # return self.cli.ask(escape(question), stream=stream)
 
             answer = self.cli.ask(question, stream=stream)  # session_id

@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:28
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 12:37:27
+# @Last modified time: 2024-12-02 16:42:34
 # @File path: ./pyllmsol/data/chat.py
 # @Project: PyLLMSol
 
@@ -30,7 +30,7 @@ from torch import Tensor
 from transformers import PreTrainedTokenizerBase
 
 # Local packages
-from pyllmsol.data._base_data import _BaseData, _TextData, _DataSet
+from pyllmsol.data._base_data import _BaseData, _TextData, _DataSet, tokenize
 
 __all__ = []
 
@@ -57,7 +57,7 @@ REPR_ROLES = {
 REPR_SEP = ""
 
 
-class Message(_BaseData):
+class Message:
     """ Handles individual chat messages with specific roles and tokenization.
 
     This class formats and tokenizes chat messages for LLM inference or
@@ -175,7 +175,7 @@ class Message(_BaseData):
             Tokenized representation of `text`.
 
         """
-        return self.tokenize(self.text, add_special_tokens=False)
+        return tokenize(self.text, self.tokenizer, add_special_tokens=False)
 
     @property
     def mask(self) -> list[int]:
@@ -193,7 +193,8 @@ class Message(_BaseData):
         mask = [1 for _ in self.tokens]
 
         if self.role == "assistant":
-            header_tokens = self.tokenize(self.header, add_special_tokens=False)
+            header_tokens = tokenize(self.header, self.tokenizer,
+                                     add_special_tokens=False)
             mask[len(header_tokens): ] = [0] * (len(mask) - len(header_tokens))
 
         return mask
@@ -272,7 +273,15 @@ class Message(_BaseData):
                 tokenizer=self.tokenizer,
             )
 
-    def to_json(self):
+    def to_json(self) -> dict[str, str]:
+        """ Set object to JSON format.
+
+        Returns
+        -------
+        dict of str
+            JSON format with role, content and metadata.
+
+        """
         return {'role': self.role, 'content': self.content, **self.metadata}
 
 
@@ -294,11 +303,14 @@ class Chat(_TextData, _BaseData):
 
     Methods
     -------
+    __getitem__
+    __setitem__
+    add
+    append
     from_json
     from_jsonl
     pad
-    append
-    add
+    to_json
 
     Attributes
     ----------
@@ -447,7 +459,7 @@ class Chat(_TextData, _BaseData):
             Token IDs representing the full chat text.
 
         """
-        return self.tokenize(self.text, add_special_tokens=True)
+        return tokenize(self.text, self.tokenizer, add_special_tokens=True)
 
     @property
     def mask(self):
@@ -657,13 +669,17 @@ class ChatDataSet(_DataSet, _BaseData):
 
     Methods
     -------
+    __getitem__
     __iter__
     __next__
+    add
     get_padded
     from_json
     from_jsonl
-    set_description
     remaining_data
+    set_boundary
+    set_description
+    to_json
 
     Attributes
     ----------

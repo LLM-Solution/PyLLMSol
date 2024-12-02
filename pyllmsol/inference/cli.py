@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 09:42:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 10:46:04
+# @Last modified time: 2024-12-02 13:09:42
 # @File path: ./pyllmsol/inference/cli.py
 # @Project: PyLLMSol
 
@@ -78,7 +78,10 @@ class CommandLineInterface(_BaseCommandLineInterface):
 
     PromptFactory = Prompt
 
-    pass
+    def _check_prompt_limit_context(self):
+        # TODO : How deal with too large prompt such that all the
+        #        conversation is removed ?
+        raise NotImplementedError
 
 
 if __name__ == "__main__":

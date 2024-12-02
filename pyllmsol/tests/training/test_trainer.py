@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 16:50:03
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-29 17:45:22
+# @Last modified time: 2024-12-02 16:31:21
 # @File path: ./pyllmsol/tests/training/test_trainer.py
 # @Project: PyLLMSol
 
@@ -33,7 +33,7 @@ def tokenizer():
 
 @pytest.fixture
 def dataset(tokenizer):
-    return PromptDataSet(items=["text1", "text 2", "text 3"], tokenizer=tokenizer)
+    return PromptDataSet(items=["text1", "text 2", "text 3"], tokenizer=tokenizer, batch_size=2)
 
 
 @pytest.fixture
@@ -52,7 +52,6 @@ def trainer(llm, tokenizer, dataset):
         llm=llm,
         tokenizer=tokenizer,
         dataset=dataset,
-        batch_size=2,
         accumulation_steps=3,
     )
 
@@ -64,7 +63,6 @@ def test_initialization(trainer, llm, tokenizer, dataset):
     assert trainer.llm == llm
     assert trainer.tokenizer == tokenizer
     assert trainer.dataset == dataset
-    assert trainer.batch_size == 2
     assert trainer.accumulation_steps == 3
 
 
@@ -86,7 +84,7 @@ def test_iteration(trainer):
     assert trainer.n_accumulated_grad == 0
     assert isinstance(input_ids, torch.Tensor)
     assert isinstance(attention_mask, torch.Tensor)
-    assert input_ids.size(0) == trainer.batch_size
+    assert input_ids.size(0) == trainer.dataset.batch_size
     assert attention_mask.mean() == 1
     # Check padding
     assert input_ids[0, -1] == trainer.tokenizer.pad_token_id
@@ -111,7 +109,7 @@ def test_trainig_step(trainer, optimizer):
     input_ids, attention_mask = next(trainer)
 
     trainer.training_step(input_ids, attention_mask)
-    assert trainer.n_accumulated_grad == trainer.batch_size
+    assert trainer.n_accumulated_grad == trainer.dataset.batch_size
     assert trainer.losses.current_loss == 0.05
     assert len(trainer.losses.loss_history) == 1
 

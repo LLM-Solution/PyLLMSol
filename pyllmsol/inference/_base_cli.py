@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 11:28:06
+# @Last modified time: 2024-12-02 16:48:34
 # @File path: ./pyllmsol/inference/_base_cli.py
 # @Project: PyLLMSol
 
@@ -75,8 +75,6 @@ class _BaseCommandLineInterface(_Base):
         conversation, except if you call the `reset_prompt` method.
     stop : list of str
         List of paterns to stop the text generation of the LLM.
-    today : str
-        Current date in "Month Day, Year" format.
     verbose : bool
         Indicates whether verbose mode is enabled.
 
@@ -103,7 +101,6 @@ class _BaseCommandLineInterface(_Base):
         )
         self.verbose = verbose
 
-        self.today = strftime("%B %d, %Y")
         self.user_name = "User"
         self.ai_name = "Assistant"
         self.stop = [f"\n{self.user_name}:", f"\n{self.ai_name}:"]
@@ -183,19 +180,15 @@ class _BaseCommandLineInterface(_Base):
         self.logger.debug("<Run>")
         question = ""
 
-        try:
+        str_time = strftime("%H:%M:%S")
+        question = self._input(f"{str_time} | {self.user_name}: ")
+
+        while question.lower() != "exit":
+            output = self.ask(question, stream=stream)
+            self.answer(output)
+
             str_time = strftime("%H:%M:%S")
             question = self._input(f"{str_time} | {self.user_name}: ")
-
-            while question.lower() != "exit":
-                output = self.ask(question, stream=stream)
-                self.answer(output)
-
-                str_time = strftime("%H:%M:%S")
-                question = self._input(f"{str_time} | {self.user_name}: ")
-
-        except Exception as e:
-            self.exit(f"\n\nAN ERROR OCCURS.\n\n{type(e)}: {e}")
 
         self.exit(f"Goodbye {self.user_name} ! I hope to see you "
                   f"soon !\n")
@@ -229,7 +222,8 @@ class _BaseCommandLineInterface(_Base):
         """
         answer = self._answer(output)
         self.prompt_hist += f"{answer}"
-        self.logger.debug(f"ANSWER - {self.ai_name}: {_TextData(answer)}")
+        answer = _TextData(answer, self.llm.tokenize)
+        self.logger.debug(f"ANSWER - {self.ai_name}: {answer}")
 
 
     def ask(
@@ -254,7 +248,6 @@ class _BaseCommandLineInterface(_Base):
 
         """
         self.logger.debug(f"ASK - {self.user_name}: {question}")
-        # self.logger.debug(f"type {type(question)}")
 
         # Get prompt at the suitable format
         prompt = f"\n{self.user_name}: {question}\n{self.ai_name}: "
@@ -314,15 +307,9 @@ class _BaseCommandLineInterface(_Base):
             yield g['choices'][0]['text']
 
     def _check_prompt_limit_context(self):
-        # FIXME : How deal with too large prompt such that all the
-        #         conversation is removed ?
-        #         Currently not working
+        # TODO : How deal with too large prompt such that all the
+        #        conversation is removed ?
         raise NotImplementedError
-        # while self._get_n_token(str(self.prompt_hist)) > self.llm.n_ctx:
-        #     chunked_prompt = str(self.prompt_hist).split("\n")
-        #     poped_prompt = chunked_prompt.pop(1)
-        #     self.logger.debug(f"Pop the following part: {poped_prompt}")
-        #     self.prompt_hist = "\n".join(chunked_prompt)
 
     def _get_n_token(self, sentence: str) -> int:
         return len(self.llm.tokenize(sentence.encode('utf-8')))
@@ -357,7 +344,7 @@ class _BaseCommandLineInterface(_Base):
 
     def reset_prompt(self):
         """ Reset the current prompt history with `self.init_prompt`. """
-        self.logger.debug("Reset prompt:\n" + repr(self.init_prompt))
+        self.logger.debug(f"Reset prompt:\n{repr(self.init_prompt)}")
 
         if self.init_prompt:
             self.prompt_hist = deepcopy(self.init_prompt)

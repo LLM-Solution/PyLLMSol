@@ -444,6 +444,7 @@ disable=raw-checker-failed,
         R1705,  # unecessary elif
         W0231,  # super-init-not-called
         W0107,  # unnecessary-pass
+        W0511,  # fixme
 
 
 # Enable the message, report, category or checker with the given id(s). You can

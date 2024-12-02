@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:33:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 10:55:14
+# @Last modified time: 2024-12-02 13:12:18
 # @File path: ./pyllmsol/training/trainer.py
 # @Project: PyLLMSol
 
@@ -41,8 +41,6 @@ class Trainer(_Base):
         The tokenizer for encoding the data.
     dataset : list of str or PromptDataSet
         A list of text samples or a `PromptDataSet` object for training.
-    batch_size : int
-        Number of samples per batch.
     accumulation_steps : int, optional
         Number of steps to accumulate gradients before updating, default is 1.
 
@@ -59,8 +57,6 @@ class Trainer(_Base):
     ----------
     accumulation_steps : int
         The gradient accumulation steps.
-    batch_size : int
-        Number of samples per batch.
     dataset : PromptDataSet
         Training PromptDataSet instance.
     losses : Losses
@@ -85,29 +81,19 @@ class Trainer(_Base):
         llm: AutoModelForCausalLM,
         tokenizer: PreTrainedTokenizerBase,
         dataset: list | PromptDataSet,
-        batch_size: int,
         accumulation_steps: int = 1,
     ):
         if isinstance(dataset, list):
             dataset = PromptDataSet(
                 dataset,
-                batch_size=batch_size,
                 tokenizer=tokenizer,
             )
 
-        else:
-            dataset.batch_size = batch_size
-
-        super().__init__(
-            dataset,
-            batch_size=batch_size,
-            accumulation_steps=accumulation_steps,
-        )
+        super().__init__(dataset, accumulation_steps=accumulation_steps)
 
         self.llm = llm
         self.tokenizer = tokenizer
         self.dataset = dataset
-        self.batch_size = batch_size
 
         self.accumulation_steps = accumulation_steps
         self.logger.debug("Trainer is instancied")
@@ -232,7 +218,7 @@ class Trainer(_Base):
         # Compute gradient and update weights
         loss = outputs.loss
         loss.backward()
-        self.n_accumulated_grad += self.batch_size
+        self.n_accumulated_grad += self.dataset.batch_size
 
         if self.n_accumulated_grad >= self.accumulation_steps:
             self.optimizer.step()

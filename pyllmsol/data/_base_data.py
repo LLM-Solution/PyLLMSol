@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:05
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 12:36:20
+# @Last modified time: 2024-12-02 16:45:13
 # @File path: ./pyllmsol/data/_base_data.py
 # @Project: PyLLMSol
 
@@ -28,6 +28,44 @@ __all__ = []
 
 
 TokenizerType = LlamaTokenizer | PreTrainedTokenizerBase
+
+
+def tokenize(
+    text: str,
+    tokenizer: TokenizerType,
+    add_special_tokens: bool = False,
+) -> list[int]:
+    """ Get tokenized text.
+
+    Parameters
+    ----------
+    text : str
+        Text to tokenize.
+    add_special_tokens : bool, optional
+        If `True` add special tokens (e.g BOS), default is `False`.
+
+    Returns
+    -------
+    list of str
+        Sequence of token IDs.
+
+    """
+    if isinstance(tokenizer, PreTrainedTokenizerBase):
+        return tokenizer.encode(
+            text,
+            add_special_tokens=add_special_tokens,
+        )
+
+    elif isinstance(tokenizer, LlamaTokenizer):
+        return tokenizer.encode(
+            text,
+            add_bos=add_special_tokens,
+            special=True,
+        )
+
+    else:
+        raise TypeError(f"Unsupported tokenizer type: {type(tokenizer)}. "
+                        f"Expected {TokenizerType}.")
 
 
 class _BaseData(ABC):
@@ -120,47 +158,6 @@ class _BaseData(ABC):
         """
         self.items.append(self._process_item(item))
 
-    def tokenize(
-        self,
-        text: str,
-        add_special_tokens: bool = False,
-    ) -> list[int]:
-        """ Get tokenized text.
-
-        Parameters
-        ----------
-        text : str
-            Text to tokenize.
-        add_special_tokens : bool, optional
-            If `True` add special tokens (e.g BOS), default is `False`.
-
-        Returns
-        -------
-        list of str
-            Sequence of token IDs.
-
-        """
-        if not self.tokenizer:
-            raise ValueError("Tokenizer is not set. Please provide a valid "
-                             "tokenizer.")
-
-        if isinstance(self.tokenizer, PreTrainedTokenizerBase):
-            return self.tokenizer.encode(
-                text,
-                add_special_tokens=add_special_tokens,
-            )
-
-        elif isinstance(self.tokenizer, LlamaTokenizer):
-            return self.tokenizer.encode(
-                text,  # .encode('utf-8'),
-                add_bos=add_special_tokens,
-                special=True,
-            )
-
-        else:
-            raise TypeError(f"Unsupported tokenizer type: {type(self.tokenizer)}. "
-                            f"Expected {TokenizerType}.")
-
     @abstractmethod
     def add(self, item: object, inplace: bool = False):
         """ Add an object to _BaseData objects. """
@@ -229,9 +226,11 @@ class _TextData(_BaseData):
 
     Methods
     -------
+    add
     from_textfile
     get_n_tokens
     tokenize
+    to_json
 
     Attributes
     ----------
@@ -247,7 +246,7 @@ class _TextData(_BaseData):
 
     """
 
-    def __init__(self, text, tokenizer: TokenizerType = None):
+    def __init__(self, text, tokenizer: TokenizerType):
         self.text = text
         self.tokenizer = tokenizer
 
@@ -261,7 +260,7 @@ class _TextData(_BaseData):
             Tokenized representation of `text`.
 
         """
-        return self.tokenize(self.text, add_special_tokens=True)
+        return tokenize(self.text, self.tokenizer, add_special_tokens=True)
 
     @property
     def mask(self) -> list[int]:
@@ -279,7 +278,7 @@ class _TextData(_BaseData):
     def from_textfile(
         cls,
         path: Path,
-        tokenizer: TokenizerType = None,
+        tokenizer: TokenizerType,
     ) -> '_TextData':
         """ Create an instance object from a text file.
 
@@ -405,18 +404,16 @@ class _DataSet(_BaseData):
 
     Methods
     -------
-    __iter__()
-        Initializes the iterator and progress bar.
-    __next__()
-        Retrieves the next batch of data and updates the progress bar.
-    set_description(text)
-        Sets a description for the progress bar.
-    remaining_data()
-        Returns the remaining data that has not yet been iterated.
+    __getitem__
+    __iter__
+    __next__
+    add
     from_json
-        Load dataset from a JSON file.
     from_jsonl
-        Load dataset from a JSONL file.
+    remaining_data
+    set_description
+    set_boundary
+    to_json
 
     Attributes
     -----------
@@ -438,8 +435,8 @@ class _DataSet(_BaseData):
     def __init__(
         self,
         items: list[_TextData | str],
+        tokenizer: TokenizerType,
         batch_size: int = 1,
-        tokenizer: TokenizerType = None,
     ):
         super().__init__(items, _TextData, str, tokenizer)
         self.batch_size = batch_size

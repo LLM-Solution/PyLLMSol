@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 14:28:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 09:19:55
+# @Last modified time: 2024-12-02 16:29:36
 
 """ Test `data/chat.py` script. """
 
@@ -87,7 +87,7 @@ def test_mask_property_for_user_role(sample_message):
 def test_mask_property_for_assistant_role(mock_tokenizer):
     # Test mask for an assistant role where content tokens are masked (0)
     msg = Message(role="assistant", content="How can I help?", tokenizer=mock_tokenizer)
-    header_tokens = msg.tokenize(msg.header, add_special_tokens=False)
+    header_tokens = msg.tokenizer.encode(msg.header, add_bos=False)
     expected_mask = [1] * len(header_tokens) + [0] * (len(msg.tokens) - len(header_tokens))
     assert msg.mask == expected_mask
 
