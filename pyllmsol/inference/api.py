@@ -2,13 +2,13 @@
 # coding: utf-8
 # @Author: ArthurBernard
 # @Email: arthur.bernard.92@gmail.com
-# @Date: 2024-10-31 08:59:41
+# @Date: 2024-12-02 11:35:15
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 11:37:09
-# @File path: ./pyllmsol/inference/_base_api.py
+# @Last modified time: 2024-12-02 11:51:53
+# @File path: ./pyllmsol/inference/api.py
 # @Project: PyLLMSol
 
-""" Base API object for serving an LLM chatbot via Flask.
+""" API object for serving an LLM chatbot via Flask.
 
 This module defines an API class for deploying a Flask-based server to  interact
 with a Large Language Model (LLM). It includes multiple routes for querying the
@@ -20,6 +20,7 @@ LLM, resetting or modifying the prompt, and managing the server lifecycle.
 from pathlib import Path
 from threading import Thread
 from time import sleep
+import sys
 
 # Third party packages
 from flask import Flask, request, Response
@@ -40,17 +41,15 @@ class API(_Base):
 
     Parameters
     ----------
-    model_path : str or Path
-        Path to the LLM model weights (GGUF format required).
-    init_prompt : str
-        Initial prompt to feed the LLM.
-    lora_path : str or Path, optional
-        Path to LoRA weights. Default is None.
-    n_ctx : int, optional
-        Maximum number of tokens in the prompt context window. Default is 32768.
+    cli : _BaseCommandLineInterface
+        An instance of the chatbot interface for interacting with the LLM.
     debug : bool, optional
         If True, enables debug mode for Flask and allows multiple servers to run
         simultaneously. Default is False.
+
+    References
+    ----------
+    .. [1] https://llama-cpp-python.readthedocs.io/en/latest/api-reference/
 
     Methods
     -------
@@ -63,12 +62,10 @@ class API(_Base):
     ----------
     app : Flask
         The Flask application instance.
-    cli : CommandLineInterface
+    cli : _BaseCommandLineInterface
         An instance of the chatbot interface for interacting with the LLM.
     debug : bool
         Indicates whether the API is running in debug mode.
-    init_prompt : str
-        Initial prompt fed to the LLM.
     lock_file : Path
         File used to prevent multiple servers from running concurrently.
 
@@ -118,37 +115,16 @@ class API(_Base):
 
     def __init__(
         self,
-        model_path: str | Path,
-        init_prompt: str,
-        lora_path: str | Path = None,
-        n_ctx: int = 32768,
+        cli: _BaseCommandLineInterface,
         debug: bool = False,
     ):
-        super().__init__(
-            logger=True,
-            model_path=model_path,
-            init_prompt=init_prompt,
-            lora_path=lora_path,
-            n_ctx=n_ctx,
-            debug=debug,
-        )
-        self.init_prompt = init_prompt
+        super().__init__(logger=True, cli=cli, debug=debug)
+        self.cli = cli
         self.debug = debug
 
         self.logger.debug("Start init Flask API object")
         self.app = Flask(__name__)
         self.add_route()
-
-        # Set CLI object
-        lora_path = str(lora_path) if lora_path else None
-        self.cli = _BaseCommandLineInterface.from_path(
-            model_path,
-            lora_path=lora_path,
-            init_prompt=self.init_prompt,
-            n_ctx=n_ctx,
-            n_gpu_layers=-1,
-            n_threads=None,
-        )
 
         # Add GET and POST to CLI routes
         self.add_get_cli_route()
@@ -416,7 +392,7 @@ class API(_Base):
         self.logger.debug(f"API will shutdown in {duration} seconds")
         sleep(duration)
         self.logger.debug("End of timer, API server shutting down")
-        exit(0)
+        sys.exit(0)
 
     def __enter__(self):
         """ Set up the API server context.

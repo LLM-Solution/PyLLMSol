@@ -2,13 +2,13 @@
 # coding: utf-8
 # @Author: ArthurBernard
 # @Email: arthur.bernard.92@gmail.com
-# @Date: 2024-11-28 08:56:55
+# @Date: 2024-12-02 11:39:56
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-28 16:21:55
-# @File path: ./pyllmsol/tests/inference/test_base_api.py
+# @Last modified time: 2024-12-02 11:48:04
+# @File path: ./pyllmsol/tests/inference/test_api.py
 # @Project: PyLLMSol
 
-""" Test base API object. """
+""" Test API object. """
 
 # Built-in packages
 from unittest.mock import patch
@@ -18,7 +18,8 @@ import pytest
 
 # Local packages
 from pyllmsol.mock import MockLlama
-from pyllmsol.inference._base_api import API
+from pyllmsol.inference.api import API
+from pyllmsol.inference.cli import CommandLineInterface
 
 
 __all__ = []
@@ -26,18 +27,13 @@ __all__ = []
 
 @pytest.fixture
 def api():
-    # Patch only the Llama initialization in _BaseCommandLineInterface
-    with patch('pyllmsol.inference._base_cli.Llama') as mock_llama:
-        mock_llama_instance = MockLlama()
-        mock_llama.return_value = mock_llama_instance
+    llm = MockLlama()
+    cli = CommandLineInterface(llm, init_prompt="Init prompt.")
 
-        # Initialize the API normally
-        api = API(
-            model_path="dummy/path/to/model",
-            init_prompt="Init prompt.",
-            debug=True,
-        )
-        yield api
+    # Initialize the API normally
+    api = API(cli, debug=True)
+
+    yield api
 
 
 @pytest.fixture
@@ -94,9 +90,9 @@ def test_call(client, api):
     assert response.data.decode('utf-8') == "LLM response."
 
 
-@patch('pyllmsol.inference._base_api.Thread')
+@patch('pyllmsol.inference.api.Thread')
 def test_run_with_timer(mock_thread, api):
-    api.run(timer=10)
+    api.run(timer=5)
     mock_thread.assert_called()
 
 
