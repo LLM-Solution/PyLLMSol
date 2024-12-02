@@ -4,7 +4,9 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-10-09 17:57:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 11:28:09
+# @Last modified time: 2024-12-02 17:35:30
+# @File path: ./pyllmsol/training/checkpoint.py
+# @Project: PyLLMSol
 
 """ Objects to load, save and/or make a checkpoint of models and data. """
 
@@ -144,7 +146,8 @@ class Checkpoint(_Base):
             data_path = self.path / "data.json"
             with (data_path).open("w", encoding="utf8") as f:
                 f.write(dumps(data, ensure_ascii=False))
-                self.logger.debug(f"Data of size {len(data):,} saved at {data_path}")
+                self.logger.debug(f"Data saved at {data_path}, size "
+                                  f"{len(data):,}")
 
         self.logger.info(f"<Checkpoint saved at: '{self.path}'>")
 
@@ -187,7 +190,8 @@ class Checkpoint(_Base):
         data_path = self.path / "data.json"
         with (data_path).open("r") as f:
             data = loads(f.read())
-            self.logger.debug(f"Data of size {len(data):,} loaded from {data_path}")
+            self.logger.debug(f"Data loaded from {data_path}, size "
+                              f"{len(data):,}")
 
         self.logger.info("<Model and dataset loaded from checkpoint>")
 
@@ -249,12 +253,12 @@ class Checkpoint(_Base):
         # Delete checkpoint
         self.delete()
 
-        self.logger.info(f"<Trained model saved at {path} and checkpoint deleted from "
-                 f"{self.path}>")
+        self.logger.info(f"Trained model saved at {path} and checkpoint "
+                         f"deleted from {self.path}")
 
 
 class LoaderLLM(_Base):
-    """ Load tokenizer and model.
+    """ Base object to load tokenizer, LLM and data.
 
     Parameters
     ----------
@@ -287,37 +291,68 @@ class LoaderLLM(_Base):
             **kwargs
         )
         self.checkpoint = checkpoint
-        # Load tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            model_path,
-            use_fast=False,
-        )
-
-        # /!\ LLaMa model have not pad token
-        if self.tokenizer.pad_token is None:
-            self.logger.info(f"Set pad with eos token {self.tokenizer.eos_token}")
-            self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.load_tokenizer(model_path)
 
         # Load model and data (or last available checkpoint)
         try:
             self.llm, self.data = checkpoint.load(**kwargs)
 
-        except Exception:
-            self.llm = AutoModelForCausalLM.from_pretrained(
-                model_path,
-                **kwargs,
-            )
-            self.logger.debug(f"<Model loaded from {model_path}>")
-
-            with Path(data_path).open("r", encoding="utf-8") as f:
-                self.data = loads(f.read())
-
-            self.logger.debug(f"<Dataset of size ({len(self.data):,}) loaded "
-                              f"from {data_path}>")
+        except (AttributeError, ValueError):
+            self.load_model(model_path, **kwargs)
+            self.load_data(data_path)
 
             if checkpoint:
                 self.checkpoint = Checkpoint()
                 self.logger.debug(f"Initialize {self.checkpoint}")
+
+    def load_model(self, path: str | Path, **kwargs):
+        """ Load LLM.
+
+        Parameters
+        ----------
+        path : str or Path
+            Path to load LLM.
+        **kwargs
+            Keyword arguments for `AutoModelForCausalLM.from_pretrained`
+            method, cf transformer documentation.
+
+        """
+        self.llm = AutoModelForCausalLM.from_pretrained(path, **kwargs)
+        self.logger.debug(f"Model loaded from {path}")
+
+    def load_data(self, path: str | Path):
+        """ Load data.
+
+        Parameters
+        ----------
+        path : str or Path
+            Path to load data at JSON format.
+
+        """
+        with open(path, "r", encoding='utf-8') as f:
+            self.data = loads(f.read())
+            self.logger.debug(f"Data of size {len(self.data):,} loaded from "
+                              f"{path}")
+
+    def load_tokenizer(self, path, use_fast: bool = False):
+        """ Load tokenizer.
+
+        Parameters
+        ----------
+        path : str or Path
+            Path to load tokenizer.
+        use_fast : bool, optional
+            Default is False.
+
+        """
+        # Load tokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(path, use_fast=use_fast)
+
+        # /!\ LLaMa model have not pad token
+        if self.tokenizer.pad_token is None:
+            self.logger.info(f"Set pad with eos token "
+                             f"{self.tokenizer.eos_token}")
+            self.tokenizer.pad_token = self.tokenizer.eos_token
 
 
 if __name__ == "__main__":
