@@ -2,6 +2,7 @@
 
 ![Pylint](https://github.com/LLM-Solution/PyLLMSol/actions/workflows/pylint.yml/badge.svg)
 ![Pytest](https://github.com/LLM-Solution/PyLLMSol/actions/workflows/pytest.yml/badge.svg)
+[![codecov](https://codecov.io/gh/LLM-Solution/PyLLMSol/graph/badge.svg?token=X2MH94CWGZ)](https://codecov.io/gh/LLM-Solution/PyLLMSol)
 
 **PyLLMSol** is a Python package designed to simplify the training and inference processes for **large language models (LLMs)**. With dedicated modules for both **training** and **inference**, **PyLLMSol** allows users to create checkpoints, manage prompts, and run models using CLI or API interfaces.
 

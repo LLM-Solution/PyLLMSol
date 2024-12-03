@@ -2,10 +2,13 @@
 /logs/
 /pyllmsol.egg-info/
 /__pycache__/
+/htmlcov/
 
 # Ingnore files
 *.sublime-workspace
 _old_*
+.coverage
+coverage.xml
 
 # Ignore extensions
 *.pyc
