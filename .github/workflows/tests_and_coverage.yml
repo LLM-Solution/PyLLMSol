@@ -1,4 +1,4 @@
-name: Pytest
+name: Run tests and upload coverage
 
 on: [push, pull_request]
 
@@ -20,7 +20,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements.txt
-          pip install pytest
+          pip install pytest pytest-cov
 
       - name: Run tests
-        run: pytest -v ./pyllmsol
+        run: |
+          pytest -v ./pyllmsol --cov --cov-report=xml
+
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
