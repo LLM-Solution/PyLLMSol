@@ -4,7 +4,9 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-12 18:29:10
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 10:31:14
+# @Last modified time: 2024-12-04 15:31:43
+# @File path: ./pyllmsol/training/loss.py
+# @Project: PyLLMSol
 
 """ Loss objects. """
 
@@ -97,7 +99,7 @@ class Losses:
         return pd.DataFrame({
             'loss': self.loss_history,
             'steps': range(1, len(self.loss_history) + 1),
-        }).setindex('steps')
+        }).set_index('steps')
 
     def plot(self, window_size: int = 1):
         """ Plots the loss history with an optional moving average.
