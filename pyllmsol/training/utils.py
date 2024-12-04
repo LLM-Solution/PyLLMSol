@@ -4,7 +4,9 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-10-29 14:35:28
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 10:18:56
+# @Last modified time: 2024-12-04 17:15:13
+# @File path: ./pyllmsol/training/utils.py
+# @Project: PyLLMSol
 
 """ Util functions for training. """
 
@@ -126,7 +128,8 @@ def get_token_size(text: str, tokenizer) -> int:
         Number of tokens for the piece of text.
 
     """
-    return len(tokenizer(text).input_ids)
+    # return len(tokenizer(text).input_ids)
+    return tokenizer(text).input_ids.size(1)
 
 
 def set_mask(

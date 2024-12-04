@@ -4,19 +4,20 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 16:19:58
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 11:02:16
+# @Last modified time: 2024-12-04 17:08:40
 # @File path: ./pyllmsol/mock.py
 # @Project: PyLLMSol
 
 """ Description. """
 
 # Built-in packages
+from random import randint
 from unittest.mock import MagicMock
 
 # Third party packages
 from llama_cpp import Llama, LlamaTokenizer
 import torch
-from transformers import AutoModelForCausalLM, PreTrainedTokenizerBase
+from transformers import AutoModelForCausalLM, PreTrainedTokenizerBase, BatchEncoding
 
 # Local packages
 
@@ -58,10 +59,19 @@ class MockPreTrainedTokenizerBase(PreTrainedTokenizerBase):
 
         return tokens
 
+    def decode(self, tokens, skip_special_tokens=True):
+        if skip_special_tokens and self.bos_token_id in tokens:
+            tokens = [token for token in tokens if token != self.bos_token_id]
+
+        return ''.join(chr(token) for token in tokens)
+
     def __call__(self, texts, return_tensors='pt', padding=True, add_special_tokens=True):
         outputs = []
         attention_mask = []
         max_len = 0
+        if isinstance(texts, str):
+            texts = [texts]
+
         for text in texts:
             encoded = self.encode(text, add_special_tokens=add_special_tokens)
             outputs.append(encoded)
@@ -73,7 +83,7 @@ class MockPreTrainedTokenizerBase(PreTrainedTokenizerBase):
         if return_tensors == "pt":
             outputs = torch.tensor(outputs)
 
-        return {'input_ids': outputs, 'attention_mask': torch.ones(outputs.size())}
+        return BatchEncoding(data={'input_ids': outputs, 'attention_mask': torch.ones(outputs.size())})
 
 
 class MockLlama(Llama):
@@ -105,6 +115,16 @@ class MockAutoModelForCausalLM(AutoModelForCausalLM):
 
     def train(self, mode=True):
         self.training = mode
+
+    def generate(self, input_ids, attention_mask, max_length=64):
+        n = max(0, max_length - len(input_ids))
+        tokens = [ord(i) for i in " Hello world !"]
+        generated = input_ids.tolist() if isinstance(input_ids, torch.Tensor) else input_ids
+        for i in range(len(generated)):
+            while len(generated[i]) < n:
+                generated[i].append(tokens[len(generated[i]) % len(tokens)])
+
+        return generated
 
 
 class MockOptimizer(MagicMock):
