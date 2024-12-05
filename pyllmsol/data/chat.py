@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:28
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 16:42:34
+# @Last modified time: 2024-12-05 13:15:20
 # @File path: ./pyllmsol/data/chat.py
 # @Project: PyLLMSol
 
@@ -639,6 +639,10 @@ class Chat(_TextData, _BaseData):
 
         # return self.append(new_message)
         return self.add(new_message, inplace=False)
+
+    def to_json(self) -> list:
+        """ Convert object to JSON format. """
+        return _BaseData.to_json(self)
 
 
 class ChatDataSet(_DataSet, _BaseData):

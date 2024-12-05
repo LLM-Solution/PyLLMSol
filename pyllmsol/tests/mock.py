@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 16:19:58
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 08:33:22
+# @Last modified time: 2024-12-05 10:03:27
 # @File path: ./pyllmsol/tests/mock.py
 # @Project: PyLLMSol
 
@@ -98,6 +98,9 @@ class MockLlama(Llama):
 
         else:
             return {'choices': [{'text': "LLM response."}]}
+
+    def tokenizer(self):
+        return self.tokenize
 
 
 class MockAutoModelForCausalLM(AutoModelForCausalLM):

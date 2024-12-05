@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 16:48:34
+# @Last modified time: 2024-12-05 13:13:37
 # @File path: ./pyllmsol/inference/_base_cli.py
 # @Project: PyLLMSol
 
@@ -143,7 +143,6 @@ class _BaseCommandLineInterface(_Base):
         )
 
         return cls(llm, init_prompt=init_prompt, verbose=verbose)
-
 
     def set_init_prompt(self, prompt: str | _TextData):
         """ Initialize or update the starting prompt for the LLM.
@@ -347,7 +346,11 @@ class _BaseCommandLineInterface(_Base):
         self.logger.debug(f"Reset prompt:\n{repr(self.init_prompt)}")
 
         if self.init_prompt:
-            self.prompt_hist = deepcopy(self.init_prompt)
+            # self.prompt_hist = deepcopy(self.init_prompt)
+            self.prompt_hist = self.PromptFactory(
+                **self.init_prompt.to_json(),
+                tokenizer=self.llm.tokenize,
+            )
 
         else:
             self.prompt_hist = self.PromptFactory(

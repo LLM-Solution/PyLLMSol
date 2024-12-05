@@ -81,7 +81,9 @@ PyLLMSol/
 │   │   └── loss.py
 │   │   └── trainer.py
 │   │   └── utils.py
-│   └── test/
+│   └── tests/
+│       └── mock.py
+│       └── ...                  # Some tests of PyLLMSol
 └── README.md
 ```
 

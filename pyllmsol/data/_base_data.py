@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:05
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 16:45:13
+# @Last modified time: 2024-12-05 13:12:42
 # @File path: ./pyllmsol/data/_base_data.py
 # @Project: PyLLMSol
 
@@ -211,7 +211,7 @@ class _BaseData(ABC):
 
     def to_json(self) -> list:
         """ Convert object to JSON format. """
-        return [item.to_json() for item in self.items]
+        return {'items': [item.to_json() for item in self.items]}
 
 
 class _TextData(_BaseData):
