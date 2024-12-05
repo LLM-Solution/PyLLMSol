@@ -4,7 +4,9 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-27 10:07:12
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 12:15:31
+# @Last modified time: 2024-12-05 08:35:57
+# @File path: ./pyllmsol/tests/data/test_prompt.py
+# @Project: PyLLMSol
 
 """ Test Prompt objects. """
 
@@ -25,8 +27,8 @@ from unittest.mock import Mock
 import pytest
 
 # Local packages
-from pyllmsol.mock import MockTokenizer as MockLlamaTokenizer
-from pyllmsol.mock import MockPreTrainedTokenizerBase
+from pyllmsol.tests.mock import MockTokenizer as MockLlamaTokenizer
+from pyllmsol.tests.mock import MockPreTrainedTokenizerBase
 from pyllmsol.data.prompt import Prompt, PromptDataSet
 
 

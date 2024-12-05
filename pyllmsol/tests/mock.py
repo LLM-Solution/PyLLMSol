@@ -4,8 +4,8 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 16:19:58
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-04 17:08:40
-# @File path: ./pyllmsol/mock.py
+# @Last modified time: 2024-12-05 08:33:22
+# @File path: ./pyllmsol/tests/mock.py
 # @Project: PyLLMSol
 
 """ Description. """

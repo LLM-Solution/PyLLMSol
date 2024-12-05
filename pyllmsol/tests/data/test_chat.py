@@ -4,7 +4,9 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 14:28:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 16:29:36
+# @Last modified time: 2024-12-05 08:36:19
+# @File path: ./pyllmsol/tests/inference/test_chat.py
+# @Project: PyLLMSol
 
 """ Test `data/chat.py` script. """
 
@@ -14,7 +16,7 @@
 import pytest
 
 # Local packages
-from pyllmsol.mock import MockTokenizer
+from pyllmsol.tests.mock import MockTokenizer
 from pyllmsol.data.chat import ChatDataSet, Chat, Message, ROLES, SEP
 
 __all__ = []

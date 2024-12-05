@@ -4,7 +4,9 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 10:55:40
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 12:07:26
+# @Last modified time: 2024-12-05 08:37:01
+# @File path: ./pyllmsol/tests/data/test_base_data.py
+# @Project: PyLLMSol
 
 """ Test `data/_base_data.py` script. """
 
@@ -16,8 +18,8 @@ from unittest.mock import Mock
 import pytest
 
 # Local packages
-from pyllmsol.mock import MockTokenizer as MockLlamaTokenizer
-from pyllmsol.mock import MockPreTrainedTokenizerBase
+from pyllmsol.tests.mock import MockTokenizer as MockLlamaTokenizer
+from pyllmsol.tests.mock import MockPreTrainedTokenizerBase
 from pyllmsol.data._base_data import _BaseData, _TextData, _DataSet
 
 __all__ = []

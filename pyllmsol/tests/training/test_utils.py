@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-12-04 15:34:44
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-04 17:16:15
+# @Last modified time: 2024-12-05 08:33:59
 # @File path: ./pyllmsol/tests/training/test_utils.py
 # @Project: PyLLMSol
 
@@ -18,7 +18,7 @@ import pytest
 import torch
 
 # Local packages
-from pyllmsol.mock import MockPreTrainedTokenizerBase, MockAutoModelForCausalLM
+from pyllmsol.tests.mock import MockPreTrainedTokenizerBase, MockAutoModelForCausalLM
 from pyllmsol.training.utils import (
     find_token, find_sequence, generate, get_token_size,
     set_mask, shuffle_per_batch, sort_per_tokens_size
@@ -28,21 +28,14 @@ __all__ = []
 
 
 @pytest.fixture
-def mock_tokenizer():
+def tokenizer():
     """Mock a tokenizer."""
-    # tokenizer = MagicMock()
-    # tokenizer.return_value = {"input_ids": list(range(10))}
-    # tokenizer.decode = lambda x: "decoded text"
-    # return tokenizer
     return MockPreTrainedTokenizerBase()
 
 
 @pytest.fixture
-def mock_llm():
+def llm():
     """Mock a language model."""
-    # llm = MagicMock()
-    # llm.generate = lambda **kwargs: [torch.tensor([1, 2, 3])]
-    # return llm
     return MockAutoModelForCausalLM()
 
 
@@ -77,14 +70,14 @@ def test_find_sequence_not_found():
     assert find_sequence(seq_ids, input_ids) is None
 
 
-def test_generate(mock_llm, mock_tokenizer):
-    result = generate(mock_llm, mock_tokenizer, "Hello", max_length=15, device="cpu")
+def test_generate(llm, tokenizer):
+    result = generate(llm, tokenizer, "Hello", max_length=15, device="cpu")
     assert result == "Hello world !"
 
 
-def test_get_token_size(mock_tokenizer):
+def test_get_token_size(tokenizer):
     text = "Hello world"
-    size = get_token_size(text, mock_tokenizer)
+    size = get_token_size(text, tokenizer)
     assert size == 11 + 1
 
 
@@ -96,17 +89,17 @@ def test_set_mask():
         set_mask(attention_mask, rate=1.5)
 
 
-def test_shuffle_per_batch(mock_tokenizer):
+def test_shuffle_per_batch(tokenizer):
     data = ["text1", "text2", "text3", "text4"]
-    mock_tokenizer.side_effect = lambda x: {"input_ids": [1] * len(x)}
-    shuffled = shuffle_per_batch(data, mock_tokenizer, batch_size=2)
+    tokenizer.side_effect = lambda x: {"input_ids": [1] * len(x)}
+    shuffled = shuffle_per_batch(data, tokenizer, batch_size=2)
     assert set(data) == set(shuffled)  # Ensure all data is still present
 
 
-def test_sort_per_tokens_size(mock_tokenizer):
+def test_sort_per_tokens_size(tokenizer):
     data = ["long text", "short"]
-    mock_tokenizer.side_effect = lambda x: {"input_ids": [1] * len(x)}
-    sorted_data = sort_per_tokens_size(data, mock_tokenizer)
+    tokenizer.side_effect = lambda x: {"input_ids": [1] * len(x)}
+    sorted_data = sort_per_tokens_size(data, tokenizer)
     assert sorted_data == ["short", "long text"]
 
 if __name__ == "__main__":

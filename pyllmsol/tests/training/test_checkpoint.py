@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-12-02 16:49:44
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 18:03:24
+# @Last modified time: 2024-12-03 10:52:35
 # @File path: ./pyllmsol/tests/training/test_checkpoint.py
 # @Project: PyLLMSol
 
@@ -21,7 +21,7 @@ import pytest
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 # Local packages
-from pyllmsol.training.checkpoint import Checkpoint
+from pyllmsol.training.checkpoint import Checkpoint, LoaderLLM
 
 __all__ = []
 
@@ -60,6 +60,22 @@ def checkpoint(temp_dir):
     return Checkpoint(path=temp_dir, timestep=300)
 
 
+# @pytest.fixture
+# def loader_llm(checkpoint, temp_dir):
+#     """Fixture to initialize a LoaderLLM."""
+#     with patch("pyllmsol.training.checkpoint.AutoModelForCausalLM.from_pretrained") as mock_model_loader, \
+#          patch("pyllmsol.training.checkpoint.AutoTokenizer.from_pretrained") as mock_tokenizer_loader:
+#         mock_model_loader.return_value = MagicMock()
+#         mock_tokenizer_loader.return_value = MagicMock()
+
+#         loader = LoaderLLM(
+#             model_path=temp_dir / "model",
+#             data_path=temp_dir / "data.json",
+#             checkpoint=checkpoint,
+#         )
+#         yield loader
+
+
 def test_checkpoint_initialization(checkpoint, temp_dir):
     """Test that the checkpoint initializes correctly."""
     assert checkpoint.path == temp_dir
@@ -77,7 +93,7 @@ def test_checkpoint_bool(checkpoint):
     assert checkpoint  # Should be True now
 
 
-def test_save_checkpoint(checkpoint, mock_llm, mock_tokenizer):
+def test_checkpoint_save(checkpoint, mock_llm, mock_tokenizer):
     """Test saving a checkpoint."""
     data = [{"key": "value"}]
     checkpoint.save(mock_llm, data, tokenizer=mock_tokenizer)
@@ -96,7 +112,7 @@ def test_save_checkpoint(checkpoint, mock_llm, mock_tokenizer):
     assert '{"key": "value"}' in saved_data
 
 
-def test_load_checkpoint(checkpoint, mock_llm, mock_tokenizer):
+def test_checkpoint_load(checkpoint, mock_llm, mock_tokenizer):
     """Test loading a checkpoint."""
     with patch("pyllmsol.training.checkpoint.AutoModelForCausalLM.from_pretrained") as mock_model_loader:
         mock_model_loader.return_value = mock_llm
@@ -113,7 +129,7 @@ def test_load_checkpoint(checkpoint, mock_llm, mock_tokenizer):
         assert loaded_data == ["mock_data"]
 
 
-def test_delete_checkpoint(checkpoint):
+def test_checkpoint_delete(checkpoint):
     """Test deletion of a checkpoint."""
     # Create mock files
     model_path = checkpoint.path / "model"
@@ -129,7 +145,7 @@ def test_delete_checkpoint(checkpoint):
     assert not checkpoint.path.exists()
 
 
-def test_save_trained_model(checkpoint, mock_llm, mock_tokenizer, temp_dir, temp_dir_2):
+def test_checkpoint_save_trained_model(checkpoint, mock_llm, mock_tokenizer, temp_dir, temp_dir_2):
     """Test saving the trained model."""
     save_path = temp_dir_2 / "final_model"
     checkpoint.save_trained_model(mock_llm, save_path, tokenizer=mock_tokenizer)
@@ -141,6 +157,16 @@ def test_save_trained_model(checkpoint, mock_llm, mock_tokenizer, temp_dir, temp
 
     # Check checkpoint was deleted
     assert not checkpoint.path.exists()
+
+
+# Test LoaderLLM
+# def test_loader_llm_initialization(loader_llm, temp_dir, checkpoint):
+#     """Test LoaderLLM initialization."""
+#     assert loader_llm.model_path == temp_dir / "model"
+#     assert loader_llm.data_path == temp_dir / "data.json"
+#     assert loader_llm.checkpoint == checkpoint
+#     assert loader_llm.llm is not None
+#     assert loader_llm.tokenizer is not None
 
 
 if __name__ == "__main__":

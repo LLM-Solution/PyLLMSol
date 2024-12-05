@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 16:50:03
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 16:31:21
+# @Last modified time: 2024-12-05 08:36:36
 # @File path: ./pyllmsol/tests/training/test_trainer.py
 # @Project: PyLLMSol
 
@@ -18,7 +18,7 @@ import pytest
 import torch
 
 # Local packages
-from pyllmsol.mock import (MockPreTrainedTokenizerBase, MockOptimizer,
+from pyllmsol.tests.mock import (MockPreTrainedTokenizerBase, MockOptimizer,
                            MockAutoModelForCausalLM,)
 from pyllmsol.data.prompt import PromptDataSet
 from pyllmsol.training.trainer import Trainer

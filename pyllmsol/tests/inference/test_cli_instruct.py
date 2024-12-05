@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-27 11:52:04
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-28 16:30:51
+# @Last modified time: 2024-12-05 08:34:46
 # @File path: ./pyllmsol/tests/inference/test_cli_instruct.py
 # @Project: PyLLMSol
 
@@ -17,7 +17,7 @@ from unittest.mock import patch
 import pytest
 
 # Local packages
-from pyllmsol.mock import MockLlama, MockTokenizer
+from pyllmsol.tests.mock import MockLlama, MockTokenizer
 from pyllmsol.inference.cli_instruct import InstructCLI
 from pyllmsol.data.chat import Chat, Message
 

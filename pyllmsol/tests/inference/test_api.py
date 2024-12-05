@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-12-02 11:39:56
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 11:48:04
+# @Last modified time: 2024-12-05 08:34:33
 # @File path: ./pyllmsol/tests/inference/test_api.py
 # @Project: PyLLMSol
 
@@ -17,7 +17,7 @@ from unittest.mock import patch
 import pytest
 
 # Local packages
-from pyllmsol.mock import MockLlama
+from pyllmsol.tests.mock import MockLlama
 from pyllmsol.inference.api import API
 from pyllmsol.inference.cli import CommandLineInterface
 
