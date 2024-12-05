@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-27 11:52:04
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 08:34:46
+# @Last modified time: 2024-12-05 15:30:58
 # @File path: ./pyllmsol/tests/inference/test_cli_instruct.py
 # @Project: PyLLMSol
 
@@ -39,7 +39,7 @@ def chat():
 @pytest.fixture
 def cli(chat):
     return InstructCLI(
-        llm=MockLlama(),
+        llm=MockLlama(n_ctx=240),
         init_prompt=chat,
         verbose=True,
     )
@@ -71,16 +71,9 @@ def test_prompt_history(cli):
 
 def test_context_limit(cli, chat):
     """Test context limit enforcement in _check_prompt_limit_context."""
-    print("Prompt 0", str(cli.prompt_hist))
-    print("Prompt 0", len(str(cli.prompt_hist)))
-    cli.llm.n_ctx = 240
     cli.prompt_hist.add({"role": "user", "content": "A short question."}, inplace=True)
     cli.prompt_hist.add({"role": "assistant", "content": "A short answer."}, inplace=True)
-    print("Prompt 1", str(cli.prompt_hist))
-    print("Prompt 1", len(str(cli.prompt_hist)))
     cli._check_prompt_limit_context()
-    print("Prompt 2", str(cli.prompt_hist))
-    print("Prompt 2", len(str(cli.prompt_hist)))
     assert len(cli.prompt_hist.items) == 3
     assert cli.prompt_hist.items[0]['role'] == "system"
     assert cli.prompt_hist.items[0]['content'] == "Welcome to the chat."

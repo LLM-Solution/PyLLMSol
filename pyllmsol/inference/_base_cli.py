@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-30 17:24:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 13:13:37
+# @Last modified time: 2024-12-05 15:17:06
 # @File path: ./pyllmsol/inference/_base_cli.py
 # @Project: PyLLMSol
 
@@ -18,7 +18,6 @@ enabling efficient and user-friendly interactions through the terminal.
 """
 
 # Built-in packages
-from copy import deepcopy
 from pathlib import Path
 from random import random
 from time import sleep, strftime
@@ -349,13 +348,13 @@ class _BaseCommandLineInterface(_Base):
             # self.prompt_hist = deepcopy(self.init_prompt)
             self.prompt_hist = self.PromptFactory(
                 **self.init_prompt.to_json(),
-                tokenizer=self.llm.tokenize,
+                tokenizer=self.llm.tokenizer(),
             )
 
         else:
             self.prompt_hist = self.PromptFactory(
                 "",
-                tokenizer=self.llm.tokenize,
+                tokenizer=self.llm.tokenizer(),
             )
 
         self.logger.debug("Loading initial prompt")

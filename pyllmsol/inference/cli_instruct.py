@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-09 16:49:20
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 12:14:51
+# @Last modified time: 2024-12-05 15:23:46
 # @File path: ./pyllmsol/inference/cli_instruct.py
 # @Project: PyLLMSol
 
@@ -144,10 +144,10 @@ class InstructCLI(_BaseCommandLineInterface):
         """ Ensure the conversation history remains within the token limit.
 
         This method removes the oldest non-system messages from the history if
-        the total number of tokens exceeds the context window (`llm.n_ctx`).
+        the total number of tokens exceeds the context window (`llm.n_ctx()`).
 
         """
-        while self.prompt_hist.get_n_tokens() > self.llm.n_ctx:
+        while self.prompt_hist.get_n_tokens() > self.llm.n_ctx():
             # Remove first message(s) but not system role
             i = 0
             while self.prompt_hist.items[i]['role'] == 'system':

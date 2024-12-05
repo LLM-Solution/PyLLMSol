@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 08:57:05
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 13:12:42
+# @Last modified time: 2024-12-05 15:24:29
 # @File path: ./pyllmsol/data/_base_data.py
 # @Project: PyLLMSol
 

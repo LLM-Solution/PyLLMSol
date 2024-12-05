@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 16:19:58
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 10:03:27
+# @Last modified time: 2024-12-05 15:26:22
 # @File path: ./pyllmsol/tests/mock.py
 # @Project: PyLLMSol
 
@@ -89,8 +89,11 @@ class MockPreTrainedTokenizerBase(PreTrainedTokenizerBase):
 class MockLlama(Llama):
     def __init__(self, *args, n_ctx=1024, **kwargs):
         self.tokenize = MockTokenizer()
-        self.n_ctx = n_ctx
+        self._n_ctx = n_ctx
         self._stack = MagicMock()
+
+    def n_ctx(self):
+        return self._n_ctx
 
     def __call__(self, *args, stream=False, **kwargs):
         if stream:
