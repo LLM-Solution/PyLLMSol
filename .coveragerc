@@ -10,6 +10,9 @@ omit =
 show_missing = True
 skip_covered = True
 precision = 2
+exclude_lines =
+    if __name__ == "__main__":
+    pass
 
 [html]
 directory = htmlcov
