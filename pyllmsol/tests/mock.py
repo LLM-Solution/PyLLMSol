@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 16:19:58
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 15:26:22
+# @Last modified time: 2024-12-11 16:56:13
 # @File path: ./pyllmsol/tests/mock.py
 # @Project: PyLLMSol
 
@@ -97,7 +97,7 @@ class MockLlama(Llama):
 
     def __call__(self, *args, stream=False, **kwargs):
         if stream:
-            return (c for c in "LLM response.")
+            return ({'choices': [{'text': c}]} for c in "LLM response.")
 
         else:
             return {'choices': [{'text': "LLM response."}]}

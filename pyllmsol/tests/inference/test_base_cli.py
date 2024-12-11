@@ -4,13 +4,15 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-26 17:39:37
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 08:35:21
+# @Last modified time: 2024-12-11 16:53:03
 # @File path: ./pyllmsol/tests/inference/test_base_cli.py
 # @Project: PyLLMSol
 
 """ Test base CLI object. """
 
 # Built-in packages
+from io import StringIO
+from pathlib import Path
 from time import strftime
 from unittest.mock import patch
 
@@ -35,6 +37,13 @@ def cli():
     )
 
 
+@pytest.fixture
+def mock_llama_class():
+    """Fixture to mock the Llama class."""
+    with patch('pyllmsol.inference._base_cli.Llama', MockLlama):
+        yield MockLlama
+
+
 def test_initialization(cli):
     """Test that the CLI initializes correctly."""
     assert cli.ai_name == "Assistant"
@@ -43,6 +52,49 @@ def test_initialization(cli):
     assert cli.stop == [f"\n{cli.user_name}:", f"\n{cli.ai_name}:"]
     assert isinstance(cli.init_prompt, _TextData)
     assert isinstance(cli.prompt_hist, _TextData)
+
+
+def test_from_path(mock_llama_class):
+    """Test the from_path method of _BaseCommandLineInterface."""
+    # Mock parameters
+    model_path = Path("/mock/model/path")
+    init_prompt = "Hello, I am your assistant."
+    verbose = True
+
+    # Call from_path
+    cli_instance = _BaseCommandLineInterface.from_path(
+        model_path=model_path,
+        init_prompt=init_prompt,
+        verbose=verbose,
+        n_ctx=512,  # Additional kwargs
+    )
+
+    # Assertions
+    assert isinstance(cli_instance, _BaseCommandLineInterface)
+    assert cli_instance.llm._n_ctx == 512  # Check additional arguments passed correctly
+    assert cli_instance.init_prompt.text == init_prompt  # Ensure prompt is set
+    assert cli_instance.verbose == verbose
+
+
+def test_run(cli, monkeypatch):
+    """Test the run method of _BaseCommandLineInterface."""
+    # Mock user inputs
+    inputs = iter(["User question?", "exit"])
+    monkeypatch.setattr('builtins.input', lambda _: next(inputs))
+
+    # Capture printed output
+    with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+        # Run the method
+        cli.run(stream=True)
+
+        # Retrieve printed output
+        output = mock_stdout.getvalue()
+
+    # Assertions
+    assert "Welcome, I am Assistant your custom AI" in output
+    assert "User question?" in cli.prompt_hist.text
+    assert "LLM response." in output
+    assert "Goodbye User !" in output
 
 
 @patch('pyllmsol.inference._base_cli.print')
