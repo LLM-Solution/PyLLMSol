@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-29 15:24:56
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 10:56:12
+# @Last modified time: 2024-12-11 17:22:02
 
 """ Argument Parser objects. """
 
@@ -55,6 +55,7 @@ class CLIArgParser(_BasisArgParser):
             "--verbose", "-v",
             action="store_true",
             help="Flag to set verbosity.",
+            default=False,
         )
         self.add_argument(
             "--lora_path", "--lora-path",

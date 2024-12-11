@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 09:47:15
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 08:34:52
+# @Last modified time: 2024-12-11 17:01:01
 # @File path: ./pyllmsol/tests/inference/test_cli.py
 # @Project: PyLLMSol
 
@@ -38,6 +38,11 @@ def test_initialization(cli):
     """Test that the CLI initializes correctly."""
     assert isinstance(cli.init_prompt, Prompt)
     assert isinstance(cli.prompt_hist, Prompt)
+
+
+def test_check_prompt_limit_context(cli):
+    with pytest.raises(NotImplementedError):
+        cli._check_prompt_limit_context()
 
 
 

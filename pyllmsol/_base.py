@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-31 09:41:32
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-30 10:01:57
+# @Last modified time: 2024-12-11 17:14:03
 
 """ Base objects. """
 
@@ -92,7 +92,10 @@ class _Base:
             attributes.
 
         """
-        params = ', '.join(f'{k}={repr(v)}' for k, v in self.to_dict().items())
+        params = ', '.join(
+            f'{k}={repr(v)}'
+            for k, v in self.to_dict(exclude=["logger"]).items()
+        )
 
         return f"{self.__class__.__name__}({params})"
 
@@ -110,13 +113,11 @@ class _Base:
             attributes formatted with `pprint` for easy inspection.
 
         """
-        params = {
-            k: v for k, v in self.__dict__.items() if not k.startswith('_')
-        }
+        params = self.to_dict(exclude=["logger"])
 
         return f"{self.__class__.__name__}({pformat(params)})"
 
-    def to_dict(self):
+    def to_dict(self, exclude=None):
         """ Convert instance attributes to a dictionary.
 
         Returns
@@ -125,8 +126,14 @@ class _Base:
             Dictionary of all non-private attributes and their values.
 
         """
+        if exclude is None:
+            exclude = []
 
-        return {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
+        return {
+            k: v
+            for k, v in self.__dict__.items()
+            if not k.startswith('_') and k not in exclude
+        }
 
 
 if __name__ == "__main__":
