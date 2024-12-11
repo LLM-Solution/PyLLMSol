@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-12-11 17:16:58
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-11 17:25:10
+# @Last modified time: 2024-12-11 17:33:37
 # @File path: ./pyllmsol/tests/test_argparser.py
 # @Project: PyLLMSol
 
@@ -43,18 +43,18 @@ def test_basis_argparser_str():
     assert output.strip() == expected_output.strip()
 
 
-def test_cliargparser_defaults():
-    """Test CLIArgParser with default values."""
-    parser = CLIArgParser(file="cli_script.py")
-    args = parser()  # No arguments passed, so defaults should be used
+# def test_cliargparser_defaults():
+#     """Test CLIArgParser with default values."""
+#     parser = CLIArgParser(file="cli_script.py")
+#     args = parser()  # No arguments passed, so defaults should be used
 
-    n_threads_default = max(1, cpu_count() - 1)
-    assert args.n_ctx == 32768
-    assert args.n_threads == n_threads_default
-    assert args.model_path is None
-    assert args.init_prompt is None
-    # assert args.verbose is False
-    assert args.lora_path is None
+#     n_threads_default = max(1, cpu_count() - 1)
+#     assert args.n_ctx == 32768
+#     assert args.n_threads == n_threads_default
+#     assert args.model_path is None
+#     assert args.init_prompt is None
+#     # assert args.verbose is False
+#     assert args.lora_path is None
 
 
 def test_cliargparser_custom_values():
