@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-12-04 15:25:46
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-04 15:34:03
+# @Last modified time: 2024-12-11 18:45:23
 # @File path: ./pyllmsol/tests/training/test_loss.py
 # @Project: PyLLMSol
 
@@ -39,6 +39,13 @@ def test_append_loss(empty_losses):
     empty_losses.append(0.5)
     assert empty_losses.loss_history == [0.5]
     assert empty_losses.current_loss == 0.5
+
+
+def test_add_loss(prefilled_losses):
+    """Test adding a loss using +=."""
+    prefilled_losses = prefilled_losses + 0.3
+    assert prefilled_losses.loss_history == [0.5, 0.4, 0.35, 0.3]
+    assert prefilled_losses.current_loss == 0.3
 
 
 def test_iadd_loss(prefilled_losses):

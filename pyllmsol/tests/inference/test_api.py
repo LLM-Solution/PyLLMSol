@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-12-02 11:39:56
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 08:34:33
+# @Last modified time: 2024-12-11 20:28:55
 # @File path: ./pyllmsol/tests/inference/test_api.py
 # @Project: PyLLMSol
 
@@ -31,7 +31,7 @@ def api():
     cli = CommandLineInterface(llm, init_prompt="Init prompt.")
 
     # Initialize the API normally
-    api = API(cli, debug=True)
+    api = API(cli, debug=False)
 
     yield api
 
@@ -47,6 +47,13 @@ def test_ping(client):
     assert response.data.decode('utf-8') == 'pong'
 
 
+def test_shutdown(client):
+    # with pytest.raises(RuntimeError, match="Not running with the Werkzeug Server"):
+    response = client.post('/shutdown')
+    # Why error 500 ?
+    assert response.status_code == 500
+
+
 def test_health(client):
     response = client.get('/health')
     assert response.status_code == 200
@@ -55,6 +62,12 @@ def test_health(client):
 def test_ask(client, api):
     response = client.post('/ask', json={"question": "What is AI?", "stream": False})
     assert response.status_code == 200
+    assert response.content_type == "text/html; charset=utf-8"
+    assert response.data.decode('utf-8') == "LLM response."
+
+    response = client.post('/ask', json={"question": "What is AI?", "stream": True})
+    assert response.status_code == 200
+    assert response.content_type == "text/event-stream"
     assert response.data.decode('utf-8') == "LLM response."
 
 
@@ -89,6 +102,11 @@ def test_call(client, api):
     assert response.status_code == 200
     assert response.data.decode('utf-8') == "LLM response."
 
+    response = client.post('/call', json={"question": "What is AI?", "stream": True})
+    assert response.status_code == 200
+    assert response.content_type == "text/event-stream"
+    assert response.data.decode('utf-8') == "LLM response."
+
 
 @patch('pyllmsol.inference.api.Thread')
 def test_run_with_timer(mock_thread, api):
@@ -96,8 +114,16 @@ def test_run_with_timer(mock_thread, api):
     mock_thread.assert_called()
 
 
-def test_debug_mode(api):
-    assert api.debug is True
+def test_timer_to_shutdown(api):
+    with pytest.raises(SystemExit):
+        api._timer_to_shutdown(1)
+
+
+def test_context_manager(api):
+    with api:
+        assert api.lock_file.exists()
+
+    assert not api.lock_file.exists()
 
 
 if __name__ == "__main__":

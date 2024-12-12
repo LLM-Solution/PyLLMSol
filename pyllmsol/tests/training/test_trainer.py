@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-28 16:50:03
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 08:36:36
+# @Last modified time: 2024-12-11 18:25:13
 # @File path: ./pyllmsol/tests/training/test_trainer.py
 # @Project: PyLLMSol
 
@@ -64,6 +64,17 @@ def test_initialization(trainer, llm, tokenizer, dataset):
     assert trainer.tokenizer == tokenizer
     assert trainer.dataset == dataset
     assert trainer.accumulation_steps == 3
+
+    trainer = Trainer(
+        llm=llm,
+        tokenizer=tokenizer,
+        dataset=["text1", "text 2", "text 3"],
+        accumulation_steps=3,
+    )
+
+    assert isinstance(trainer.dataset, PromptDataSet)
+    assert len(trainer.dataset) == 3
+    assert trainer.dataset.batch_size == 1
 
 
 def test_set_mask(trainer):

@@ -4,7 +4,9 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-12 16:27:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-02 13:12:50
+# @Last modified time: 2024-12-11 17:55:56
+# @File path: ./pyllmsol/training/instruct_trainer.py
+# @Project: PyLLMSol
 
 """ Trainer objects for model with chat data template.
 

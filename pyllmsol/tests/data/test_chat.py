@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 14:28:52
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 08:36:19
+# @Last modified time: 2024-12-11 19:59:24
 # @File path: ./pyllmsol/tests/inference/test_chat.py
 # @Project: PyLLMSol
 
@@ -14,6 +14,7 @@
 
 # Third party packages
 import pytest
+import torch
 
 # Local packages
 from pyllmsol.tests.mock import MockTokenizer
@@ -141,6 +142,18 @@ def test_contains_invalid_key(sample_message):
     assert "invalid_key" not in sample_message
 
 
+def test_add_message(sample_message):
+    with pytest.raises(TypeError):
+        sample_message.add(1)
+
+    new_message = sample_message.add(" How are you?")
+    new_message.content == "Hello, world! How are you?"
+    sample_message.content == "Hello, world!"
+
+    sample_message.add(" How are you?", inplace=True)
+    sample_message.content == "Hello, world! How are you?"
+
+
 # Test Chat object
 
 def test_chat_text_property(sample_chat):
@@ -184,6 +197,8 @@ def test_add_message_dict(sample_chat):
     message = {"role": "user", "content": "New user message"}
     sample_chat.add(message, inplace=True)
     assert sample_chat.items[-1].content == "New user message"
+    assert sample_chat.items[-1].role == "user"
+    assert len(sample_chat.items) == 3
 
 
 def test_add_message_object(sample_chat, mock_tokenizer):
@@ -191,6 +206,17 @@ def test_add_message_object(sample_chat, mock_tokenizer):
     new_message = Message(role="assistant", content="New assistant message", tokenizer=mock_tokenizer)
     sample_chat.add(new_message, inplace=True)
     assert sample_chat.items[-1].content == "New assistant message"
+    assert sample_chat.items[-1].role == "assistant"
+    assert len(sample_chat.items) == 3
+
+
+def test_add_chat_object(sample_chat, mock_tokenizer):
+    # Test adding a Chat object to the chat
+    new_chat = Chat(items=[dict(role="assistant", content="New assistant message")], tokenizer=mock_tokenizer)
+    sample_chat.add(new_chat, inplace=True)
+    assert sample_chat.items[-1].content == "New assistant message"
+    assert sample_chat.items[-1].role == "assistant"
+    assert len(sample_chat.items) == 3
 
 
 def test_add_invalid_role_in_chat(sample_chat):
@@ -198,6 +224,63 @@ def test_add_invalid_role_in_chat(sample_chat):
     invalid_message = {"role": "invalid_role", "content": "Should fail"}
     with pytest.raises(ValueError, match="Invalid role"):
         sample_chat.add(invalid_message, inplace=True)
+
+
+def test_add_invalid_type(sample_chat):
+    # Test adding a message with an invalid type, should raise TypeError
+    invalid_message = 1
+    with pytest.raises(TypeError):
+        sample_chat.add(invalid_message, inplace=True)
+
+
+def test_chat_from_json(mock_tokenizer, tmp_path):
+    # Test from_json method
+    json_data = '[{"role": "user", "content": "Hi!"}, {"role": "assistant", "content": "Hi!"}]'
+    json_file = tmp_path / "chat.json"
+
+    with pytest.raises(FileNotFoundError):
+        chat = Chat.from_json(path=json_file, tokenizer=mock_tokenizer)
+
+    json_file.write_text(json_data)
+
+    chat = Chat.from_json(path=json_file, tokenizer=mock_tokenizer)
+    assert len(chat.items) == 2
+    assert isinstance(chat.items[0], Message)
+
+
+def test_chat_from_jsonl(mock_tokenizer, tmp_path):
+    # Test from_jsonl method
+    jsonl_data = '{"role": "user", "content": "Hi!"}\n{"role": "assistant", "content": "Hello!"}'
+    jsonl_file = tmp_path / "chat.jsonl"
+
+    with pytest.raises(FileNotFoundError):
+        chat = Chat.from_jsonl(path=jsonl_file, tokenizer=mock_tokenizer)
+
+    jsonl_file.write_text(jsonl_data)
+
+    chat = Chat.from_jsonl(path=jsonl_file, tokenizer=mock_tokenizer)
+    assert len(chat.items) == 2
+    assert isinstance(chat.items[0], Message)
+
+
+def test_chat_setitem(sample_chat):
+    with pytest.raises(KeyError):
+        sample_chat['toto'] = "Hello world !"
+
+    sample_chat['user'] = "Hi!"
+    assert sample_chat.items[-1].content == "Hi!"
+    assert sample_chat.items[-1].role == "user"
+    assert len(sample_chat.items) == 3
+
+
+def test_chat_getitem(sample_chat):
+    with pytest.raises(KeyError):
+        chat_with_empty_last_message = sample_chat['toto']
+
+    chat_with_empty_last_message = sample_chat['user']
+    assert chat_with_empty_last_message.items[-1].content == ""
+    assert chat_with_empty_last_message.items[-1].role == "user"
+    assert len(chat_with_empty_last_message.items) == 3
 
 
 # Test ChatDataSet object
@@ -234,11 +317,28 @@ def test_dataset_initialization_with_dict_lists(mock_tokenizer):
 
 def test_dataset_get_padded(sample_chat, mock_tokenizer):
     # Test get_padded method
-    dataset = ChatDataSet(items=[sample_chat], tokenizer=mock_tokenizer)
+    items = [sample_chat, sample_chat.add({"role": "user", "content": "how are you?"})]
+    dataset = ChatDataSet(items=items, tokenizer=mock_tokenizer, batch_size=2)
+    # Returns list
     tokens, mask = dataset.get_padded()
+    assert isinstance(tokens, list)
+    assert isinstance(mask, list)
     assert len(tokens) == len(mask)
     assert len(tokens[0]) == len(mask[0])
+    assert len(tokens[0]) == len(tokens[1])
+    assert len(mask[0]) == len(mask[1])
     assert tokens[0][:sample_chat.get_n_tokens()] == sample_chat.tokens
+    n = max(chat.get_n_tokens() for chat in dataset.items) - sample_chat.get_n_tokens()
+    assert tokens[0][sample_chat.get_n_tokens():] == [mock_tokenizer.pad_token_id] * n
+
+    # Returns tensor
+    tokens, mask = dataset.get_padded(return_tensor=True)
+    assert isinstance(tokens, torch.Tensor)
+    assert isinstance(mask, torch.Tensor)
+    assert tokens.size() == mask.size()
+    assert torch.equal(tokens[0][:sample_chat.get_n_tokens()], torch.tensor(sample_chat.tokens))
+    n = max(chat.get_n_tokens() for chat in dataset.items) - sample_chat.get_n_tokens()
+    assert torch.equal(tokens[0][sample_chat.get_n_tokens():], torch.tensor([mock_tokenizer.pad_token_id] * n))
 
 
 def test_dataset_iteration(sample_chat, mock_tokenizer):

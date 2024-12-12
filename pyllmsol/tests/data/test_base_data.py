@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-14 10:55:40
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 08:37:01
+# @Last modified time: 2024-12-11 20:01:57
 # @File path: ./pyllmsol/tests/data/test_base_data.py
 # @Project: PyLLMSol
 
@@ -20,7 +20,7 @@ import pytest
 # Local packages
 from pyllmsol.tests.mock import MockTokenizer as MockLlamaTokenizer
 from pyllmsol.tests.mock import MockPreTrainedTokenizerBase
-from pyllmsol.data._base_data import _BaseData, _TextData, _DataSet
+from pyllmsol.data._base_data import _BaseData, _TextData, _DataSet, tokenize
 
 __all__ = []
 
@@ -40,6 +40,19 @@ def mock_transformers_tokenizer():
 #     instance = MockBase(items=["Sample text"], item_type=_TextData, fallback_type=str, tokenizer=MockLlamaTokenizer())
 
 #     return instance
+
+
+def test_tokenize(mock_llama_tokenizer, mock_transformers_tokenizer):
+    tokens = tokenize("Hello", mock_llama_tokenizer)
+    assert isinstance(tokens, list)
+    assert all(isinstance(t, int) for t in tokens)
+
+    tokens = tokenize("Hello", mock_transformers_tokenizer)
+    assert isinstance(tokens, list)
+    assert all(isinstance(t, int) for t in tokens)
+
+    with pytest.raises(TypeError):
+        tokenize("Hello", None)
 
 
 # # Test _BaseData object
@@ -142,6 +155,9 @@ def test_add_operator(mock_transformers_tokenizer):
     result = data1 + data2
     assert result.text == "Hello, world!"
 
+    with pytest.raises(TypeError):
+        data1 + 1
+
 
 def test_get_n_tokens(mock_llama_tokenizer):
     text = "Sample text"
@@ -156,6 +172,28 @@ def test_dataset_initialization(mock_transformers_tokenizer):
     dataset = _DataSet(text_list, batch_size=2, tokenizer=mock_transformers_tokenizer)
     assert len(dataset.items) == 3
     assert dataset.batch_size == 2
+
+
+def test_set_boundary(mock_llama_tokenizer):
+    text_list = ["Text one.", "Text two."]
+    dataset = _DataSet(text_list, batch_size=2, tokenizer=mock_transformers_tokenizer)
+
+    with pytest.raises(IndexError, match="Start index 3 is out of bounds for data of size 2"):
+        dataset.set_boundary(3)
+
+    with pytest.raises(IndexError, match="End index 4 is out of bounds for data of size 2"):
+        dataset.set_boundary(start=1, end=4)
+
+    with pytest.raises(IndexError, match="End index 0 must be greater than start index 1"):
+        dataset.set_boundary(start=1, end=0)
+
+    dataset.set_boundary(1)
+    assert dataset.start == 1
+    assert dataset.end == 2
+
+    dataset.set_boundary(start=0, end=1)
+    assert dataset.start == 0
+    assert dataset.end == 1
 
 
 def test_dataset_iteration(mock_llama_tokenizer):
@@ -188,6 +226,10 @@ def test_remaining_data(mock_llama_tokenizer):
 
 def test_from_json(mock_transformers_tokenizer, tmp_path):
     json_path = tmp_path / "test_data.json"
+
+    with pytest.raises(FileNotFoundError):
+        dataset = _DataSet.from_json(path=json_path, tokenizer=mock_transformers_tokenizer)
+
     json_path.write_text('["Text one.", "Text two."]')
     dataset = _DataSet.from_json(json_path, batch_size=1, tokenizer=mock_transformers_tokenizer)
     assert len(dataset.items) == 2
@@ -195,6 +237,10 @@ def test_from_json(mock_transformers_tokenizer, tmp_path):
 
 def test_from_jsonl(mock_llama_tokenizer, tmp_path):
     jsonl_path = tmp_path / "test_data.jsonl"
+
+    with pytest.raises(FileNotFoundError):
+        dataset = _DataSet.from_jsonl(path=jsonl_path, tokenizer=mock_llama_tokenizer)
+
     jsonl_path.write_text('"Sample text 1"\n"Sample text 2"')
     dataset = _DataSet.from_jsonl(jsonl_path, batch_size=1, tokenizer=mock_llama_tokenizer)
     assert len(dataset.items) == 2

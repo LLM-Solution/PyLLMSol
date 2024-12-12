@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-12-02 16:49:44
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-03 10:52:35
+# @Last modified time: 2024-12-11 18:43:08
 # @File path: ./pyllmsol/tests/training/test_checkpoint.py
 # @Project: PyLLMSol
 
@@ -84,6 +84,11 @@ def test_checkpoint_initialization(checkpoint, temp_dir):
     assert checkpoint.path.is_dir()
 
 
+def test_checkpoint_repr(checkpoint, temp_dir):
+    """Test that the checkpoint representation correctly."""
+    assert repr(checkpoint) == f"Checkpoint(path={temp_dir}, timestep=300)"
+
+
 def test_checkpoint_bool(checkpoint):
     """Test the boolean logic for checkpoint timing."""
     initial_ts = checkpoint.ts
@@ -91,6 +96,33 @@ def test_checkpoint_bool(checkpoint):
     time.sleep(1)
     checkpoint.timestep = 1  # Adjust timestep to test timing
     assert checkpoint  # Should be True now
+
+
+def test_checkpoint_call(checkpoint, mock_llm, mock_tokenizer):
+    """Test saving a checkpoint."""
+    model_path = checkpoint.path / "model"
+    data_path = checkpoint.path / "data.json"
+    data = [{"key": "value"}]
+
+    # Case 1 : Not saved
+    checkpoint(mock_llm, data, tokenizer=mock_tokenizer)
+    # assert not model_path.exists()
+    mock_llm.save_pretrained.assert_not_called()
+    mock_tokenizer.save_pretrained.assert_not_called()
+    assert not data_path.exists()
+
+    time.sleep(1)
+    checkpoint.timestep = 1  # Adjust timestep to test timing
+
+    # Case 2 : Checkpoint is ready to save
+    checkpoint(mock_llm, data, tokenizer=mock_tokenizer)
+    # assert model_path.exists()
+    mock_llm.save_pretrained.assert_called_with(model_path)
+    mock_tokenizer.save_pretrained.assert_called_with(model_path)
+    assert data_path.exists()
+    with data_path.open("r", encoding="utf-8") as f:
+        saved_data = f.read()
+    assert '{"key": "value"}' in saved_data
 
 
 def test_checkpoint_save(checkpoint, mock_llm, mock_tokenizer):
@@ -133,14 +165,17 @@ def test_checkpoint_delete(checkpoint):
     """Test deletion of a checkpoint."""
     # Create mock files
     model_path = checkpoint.path / "model"
+    weights_path = (model_path / "model.safetensors")
     data_path = checkpoint.path / "data.json"
     model_path.mkdir(parents=True)
+    weights_path.touch()
     data_path.touch()
 
     checkpoint.delete()
     
     # Ensure files and directory are deleted
     assert not model_path.exists()
+    assert not weights_path.exists()
     assert not data_path.exists()
     assert not checkpoint.path.exists()
 
