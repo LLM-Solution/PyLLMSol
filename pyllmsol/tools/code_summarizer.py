@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-12-14 08:54:22
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-14 09:03:28
+# @Last modified time: 2024-12-14 09:17:57
 # @File path: ./pyllmsol/tools/code_summarizer.py
 # @Project: None
 
@@ -13,7 +13,6 @@
 # Built-in packages
 import os
 from pathlib import Path
-import requests
 
 # Third party packages
 
@@ -69,6 +68,6 @@ def create_summary_file(repo_path: str, output_file: str = "summary.txt"):
 if __name__ == "__main__":
     # repo_url = input("Enter the GitHub repository URL: ")
     # repo_path = download_github_repo(repo_url)
-    output_file = input("Enter the path of output: ")
-    repo_path = Path(".")
-    create_summary_file(repo_path, output_file)
+    file = input("Enter the path of output: ")
+    path = Path(".")
+    create_summary_file(path, file)
