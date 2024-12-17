@@ -4,16 +4,16 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-12-15 09:55:05
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-17 16:32:59
+# @Last modified time: 2024-12-17 16:41:04
 # @File path:./pyllmsol/tools/project_parser.py
 # @Project: PyLLMSol
 
 """ Parser objects. """
 
 # Built-in packages
-import os
+# import os
 from pathlib import Path
-import re
+# import re
 
 # Third party packages
 
@@ -43,14 +43,14 @@ class FileParser:
         text += f"##Content\n{self.content}"
 
 
-class ProjectParser:
-    """ Base class for parsing different parts of a project. """
-    def __init__(self, path: str | Path):
-        self.repo_path = Path(path) if isinstance(path, str) else path
+# class ProjectParser:
+#     """ Base class for parsing different parts of a project. """
+#     def __init__(self, path: str | Path):
+#         self.repo_path = Path(path) if isinstance(path, str) else path
 
-    def parse(self):
-        """ Parse code. """
-        raise NotImplementedError("Subclasses must implement the parse method.")
+#     def parse(self):
+#         """ Parse code. """
+#         raise NotImplementedError("Subclasses must implement the parse method.")
 
 
 # class ReadmeParser(ProjectParser):
@@ -65,7 +65,7 @@ class ProjectParser:
 #             return self.reformat(content, "README.md")
 
 #         return "No README.md found.\n"
-    
+
 #     @staticmethod
 #     def reformat(content: str, file_name: str):
 #         """ Reformats README content. """
@@ -81,7 +81,7 @@ class ProjectParser:
 #             formatted_content = self.reformat(content, py_file.relative_to(self.repo_path))
 #             python_files_content += formatted_content
 #         return python_files_content
-    
+
 #     @staticmethod
 #     def reformat(content, file_name):
 #         """Reformats Python code content."""
@@ -95,13 +95,13 @@ class ProjectParser:
 #     """Generates a standardized summary of the project."""
 #     def __init__(self, parsers):
 #         self.parsers = parsers
-    
+
 #     def generate(self):
 #         summary = "### Project Summary\n"
 #         for parser in self.parsers:
 #             summary += parser.parse()
 #         return summary
-    
+
 #     def save(self, output_file, summary):
 #         with open(output_file, 'w', encoding='utf-8') as f:
 #             f.write(summary)
@@ -114,14 +114,14 @@ if __name__ == "__main__":
     repo_path = download_github_repo(repo_url)
 
     # Set up parsers
-    parsers = [
-        ReadmeParser(repo_path),
-        PythonCodeParser(repo_path),
-    ]
+    # parsers = [
+    #     ReadmeParser(repo_path),
+    #     PythonCodeParser(repo_path),
+    # ]
 
-    # Generate summary
-    generator = SummaryGenerator(parsers)
-    summary = generator.generate()
+    # # Generate summary
+    # generator = SummaryGenerator(parsers)
+    # summary = generator.generate()
 
-    # Save summary to file
-    generator.save("summary.txt", summary)
+    # # Save summary to file
+    # generator.save("summary.txt", summary)
