@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-12-15 09:55:05
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-17 16:28:43
+# @Last modified time: 2024-12-17 16:32:59
 # @File path:./pyllmsol/tools/project_parser.py
 # @Project: PyLLMSol
 
@@ -18,18 +18,9 @@ import re
 # Third party packages
 
 # Local packages
+from pyllmsol.tools.code_summarizer import download_github_repo
 
 __all__ = []
-
-
-def clone_github_repo(repo_url: str, dest_folder: str = "repo"):
-    """ Clones a GitHub repository to a local directory. """
-    if not repo_url.endswith('.git'):
-        repo_url += '.git'
-
-    os.system(f"git clone {repo_url} {dest_folder}")
-
-    return Path(dest_folder)
 
 
 class FileParser:
@@ -120,7 +111,7 @@ class ProjectParser:
 if __name__ == "__main__":
     # Clone repository
     repo_url = input("Enter the GitHub repository URL: ")
-    repo_path = clone_github_repo(repo_url)
+    repo_path = download_github_repo(repo_url)
 
     # Set up parsers
     parsers = [
